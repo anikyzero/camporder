@@ -36,7 +36,7 @@
       --shadow: 0 4px 16px rgba(48, 51, 47, 0.06);
     }
 
-    /* 👴 年紀友善基礎字級放大 (16px base) */
+    /* 👴 年紀友善基礎字級 (16px base) */
     html {
       font-size: 16px;
     }
@@ -186,16 +186,17 @@
         );
       }, [events, searchTerm]);
 
+      // 📤 新增報名 (拿掉電話與車號)
       const handleRegisterSubmit = async (eventId, regData) => {
         const newReg = { 
           id: 'reg-' + Date.now(),
           eventId: String(eventId),
           name: regData.name,
-          phone: regData.phone,
+          phone: '', // 已移除
           tents: Number(regData.tents || 1),
           adults: Number(regData.adults || 0),
           kids: Number(regData.kids || 0),
-          carNo: regData.carNo || '',
+          carNo: '', // 已移除
           nightArrive: Boolean(regData.nightArrive),
           note: regData.note || ''
         };
@@ -216,6 +217,7 @@
         }
       };
 
+      // ✏️ 修改報名 (拿掉電話與車號)
       const handleUpdateRegistration = async (regId, updatedData) => {
         setEditingRegister(null);
         try {
@@ -224,11 +226,9 @@
             .from('registrations')
             .update({
               name: updatedData.name,
-              phone: updatedData.phone,
               tents: Number(updatedData.tents || 1),
               adults: Number(updatedData.adults || 0),
               kids: Number(updatedData.kids || 0),
-              carNo: updatedData.carNo || '',
               nightArrive: Boolean(updatedData.nightArrive),
               note: updatedData.note || ''
             })
@@ -497,8 +497,7 @@
 
     // ----------------------------------------------------
     // 組件 1：活動卡片列表視圖 
-    // 優化：1. 移除所有標題前面小圖示
-    //       2. 卡片頂部「活動日期」在手機版改為獨立雙行/自適應排版，絕不擠壓折行！
+    // 優化：拿掉右下角的［加入這場逃離］按鈕，整張卡片乾淨可點擊
     // ----------------------------------------------------
     function EventListView({ events, onSelectEvent }) {
       if (events.length === 0) {
@@ -526,7 +525,7 @@
                 class="card-outdoor p-5 sm:p-6 flex flex-col justify-between cursor-pointer group space-y-4">
                 
                 <div>
-                  {/* 1. 卡片頂部：活動日期區塊 (優化：手機上「活動日期」與「日期區間」上下排版，絕對不擠爆折行) */}
+                  {/* 1. 卡片頂部：活動日期區塊 */}
                   <div class="border-b border-[#DDD8CB]/60 pb-3 mb-3">
                     <div class="flex items-center justify-between gap-2 mb-1">
                       <span class="text-xs sm:text-sm font-bold text-[#5A5F56]">活動日期</span>
@@ -545,12 +544,12 @@
                     </div>
                   </div>
 
-                  {/* 2. 中間活動大標題 (年紀友善大字) */}
+                  {/* 2. 中間活動大標題 */}
                   <h3 class="font-bold text-[#30332F] text-xl sm:text-2xl group-hover:text-[#3F5144] transition line-clamp-1 mb-4">
                     {evt.title}
                   </h3>
 
-                  {/* 3. 無小圖示的條列屬性 */}
+                  {/* 3. 屬性清單 */}
                   <div class="space-y-2.5 text-sm sm:text-base">
                     {/* 地點 */}
                     <div class="flex items-center justify-between py-1 border-b border-dashed border-[#DDD8CB]/40">
@@ -578,12 +577,10 @@
                   </div>
                 </div>
 
-                {/* 4. 底部按鈕 焦糖棕特調 CTA */}
-                <div class="pt-4 border-t border-[#DDD8CB] flex items-center justify-between">
-                  <span class="text-sm font-medium text-[#5A5F56]">詳細資訊 ➔</span>
-                  <button class="bg-[#B8794A] hover:bg-[#9F633D] active:bg-[#8A5331] text-[#FFFDF8] font-bold text-sm sm:text-base px-4 py-2.5 btn-rounded shadow-sm transition">
-                    ［加入這場逃離］
-                  </button>
+                {/* 4. 底部引導 (已拿掉右下角［加入這場逃離］按鈕) */}
+                <div class="pt-3 border-t border-[#DDD8CB] flex items-center justify-between text-[#5A5F56]">
+                  <span class="text-sm font-medium">點擊查看詳情與報名</span>
+                  <span class="text-base font-bold text-[#3F5144] group-hover:translate-x-1 transition">➔</span>
                 </div>
               </div>
             );
@@ -593,7 +590,7 @@
     }
 
     // ----------------------------------------------------
-    // 組件 2：月曆視圖 (無小圖示)
+    // 組件 2：月曆視圖
     // ----------------------------------------------------
     function CalendarView({ events, onSelectEvent }) {
       const today = new Date();
@@ -648,7 +645,7 @@
                 <div key={cell.dateStr} class="min-h-[64px] sm:h-28 bg-[#F5F1E8] hover:bg-[#EEEADF] p-1.5 sm:p-2 rounded-lg sm:rounded-xl border border-[#DDD8CB]/60 flex flex-col justify-between overflow-hidden">
                   <div class="flex items-center justify-between">
                     <span class="text-xs sm:text-sm font-bold text-[#30332F]">{cell.day}</span>
-                    {hasEvents && <span class="sm:hidden text-[10px] bg-[#3F5144] text-white px-1.5 rounded-full font-bold">{dayEvents.length}</span>}
+                    {hasEvents && <span class="sm:hidden text-[10px] bg-[#3F5144] text-white px-1.5 py-0.2 rounded-full font-bold">{dayEvents.length}</span>}
                   </div>
                   
                   <div class="space-y-1 overflow-y-auto custom-scrollbar flex-grow mt-1">
@@ -671,7 +668,7 @@
     }
 
     // ----------------------------------------------------
-    // 組件 3：活動詳情 & 逃離夥伴 (無小圖示)
+    // 組件 3：活動詳情 & 逃離夥伴 (拿掉電話與車號)
     // ----------------------------------------------------
     function EventDetailView({ event, onBack, onOpenRegister, onCancelReg, onDeleteEvent, onEditEvent, onEditReg }) {
       const regs = event.registrations || [];
@@ -764,7 +761,7 @@
             </div>
           </div>
 
-          {/* 逃離夥伴區域 */}
+          {/* 逃離夥伴區域 (移除電話與車號) */}
           <div class="bg-[#EEEADF] rounded-2xl p-5 sm:p-6 border border-[#DDD8CB] space-y-4">
             <div class="flex items-center justify-between border-b border-[#DDD8CB] pb-3">
               <h3 class="text-xl font-bold text-[#3F5144]">
@@ -792,7 +789,7 @@
                           </div>
                           <div>
                             <div class="font-bold text-[#30332F] text-lg">{reg.name}</div>
-                            <div class="text-sm text-[#5A5F56]">{reg.phone}</div>
+                            <div class="text-xs text-[#5A5F56]">已報名</div>
                           </div>
                         </div>
 
@@ -804,11 +801,10 @@
                       <div class="bg-[#F5F1E8] p-3 rounded-lg text-sm space-y-1.5 text-[#5A5F56]">
                         <div class="flex items-center justify-between">
                           <span>人數：<b class="text-[#30332F] text-base">{reg.adults}大 {reg.kids}小</b></span>
-                          <span>車號：<b class="font-mono text-[#30332F] text-base">{reg.carNo || '-'}</b></span>
+                          {reg.nightArrive && (
+                            <span class="text-purple-800 font-bold text-xs bg-purple-100 px-2 py-0.5 rounded">週五夜衝</span>
+                          )}
                         </div>
-                        {reg.nightArrive && (
-                          <div class="text-purple-800 font-bold text-sm">週五夜衝</div>
-                        )}
                         {reg.note && (
                           <div class="text-[#5A5F56] truncate">備註：{reg.note}</div>
                         )}
@@ -837,24 +833,22 @@
     }
 
     // ----------------------------------------------------
-    // Modal 1：加入逃離 Modal
+    // Modal 1：加入逃離 Modal (精簡版：拿掉電話與車號)
     // ----------------------------------------------------
     function RegisterModal({ event, initialData, onClose, onSubmit }) {
       const [formData, setFormData] = useState({
         name: initialData ? initialData.name : '',
-        phone: initialData ? initialData.phone : '',
         tents: initialData ? (initialData.tents || 1) : 1,
         adults: initialData ? (initialData.adults || 2) : 2,
         kids: initialData ? (initialData.kids || 0) : 0,
-        carNo: initialData ? (initialData.carNo || '') : '',
         nightArrive: initialData ? Boolean(initialData.nightArrive) : false,
         note: initialData ? (initialData.note || '') : ''
       });
 
       const handleSubmit = (e) => {
         e.preventDefault();
-        if (!formData.name || !formData.phone) {
-          alert('請填寫暱稱與電話！');
+        if (!formData.name) {
+          alert('請填寫暱稱！');
           return;
         }
         onSubmit(event.id, formData);
@@ -875,27 +869,15 @@
             </p>
 
             <form onSubmit={handleSubmit} class="mt-4 space-y-4 text-base">
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block font-bold text-[#30332F] mb-1">暱稱 / 稱呼 *</label>
-                  <input 
-                    type="text" required
-                    placeholder="例: 阿傑"
-                    value={formData.name}
-                    onChange={e => setFormData({...formData, name: e.target.value})}
-                    class="w-full p-2.5 input-outdoor"
-                  />
-                </div>
-                <div>
-                  <label class="block font-bold text-[#30332F] mb-1">聯絡電話 *</label>
-                  <input 
-                    type="tel" required
-                    placeholder="例: 0912-345678"
-                    value={formData.phone}
-                    onChange={e => setFormData({...formData, phone: e.target.value})}
-                    class="w-full p-2.5 input-outdoor"
-                  />
-                </div>
+              <div>
+                <label class="block font-bold text-[#30332F] mb-1">暱稱 / 稱呼 *</label>
+                <input 
+                  type="text" required
+                  placeholder="例: 阿傑"
+                  value={formData.name}
+                  onChange={e => setFormData({...formData, name: e.target.value})}
+                  class="w-full p-2.5 input-outdoor"
+                />
               </div>
 
               <div class="grid grid-cols-3 gap-3">
@@ -928,17 +910,6 @@
                     class="w-full p-2.5 input-outdoor"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label class="block font-bold text-[#30332F] mb-1">車牌號碼 (營區大門入場登記)</label>
-                <input 
-                  type="text" 
-                  placeholder="例: ABC-1234"
-                  value={formData.carNo}
-                  onChange={e => setFormData({...formData, carNo: e.target.value})}
-                  class="w-full p-2.5 input-outdoor uppercase"
-                />
               </div>
 
               <div class="flex items-center gap-2 bg-[#F5F1E8] p-3 rounded-xl border border-[#DDD8CB]">

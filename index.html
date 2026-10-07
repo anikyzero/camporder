@@ -47,16 +47,20 @@
       const [syncStatus, setSyncStatus] = useState('⚡ 正在連線 Supabase 極速資料庫...');
       const [currentView, setCurrentView] = useState('list'); // 'list' | 'calendar'
       const [selectedEvent, setSelectedEvent] = useState(null);
+      
+      // Modals
       const [showRegisterModal, setShowRegisterModal] = useState(false);
       const [showCreateModal, setShowCreateModal] = useState(false);
+      const [editingEvent, setEditingEvent] = useState(null); // 正在編輯的活動
+      const [editingRegister, setEditingRegister] = useState(null); // 正在編輯的報名紀錄
+
       const [searchTerm, setSearchTerm] = useState('');
 
-      // 📥 從 Supabase 讀取最新活動與報名資料 (0.1秒極速)
+      // 📥 從 Supabase 讀取最新活動與報名資料
       const loadEventsFromSupabase = async () => {
         setLoading(true);
         setSyncStatus('⚡ 正在載入雲端數據...');
         try {
-          // 抓取活動
           const { data: eventsData, error: evErr } = await supabase
             .from('events')
             .select('*')
@@ -64,14 +68,12 @@
 
           if (evErr) throw evErr;
 
-          // 抓取所有報名紀錄
           const { data: regsData, error: regErr } = await supabase
             .from('registrations')
             .select('*');
 
           if (regErr) throw regErr;
 
-          // 組合資料
           const eventsMap = (eventsData || []).map(evt => {
             const regs = (regsData || []).filter(r => String(r.eventId) === String(evt.id));
             return {
@@ -90,17 +92,16 @@
           setSyncStatus('⚡ 雲端實時同步中 (Supabase 極速回應)');
         } catch (err) {
           console.error("Supabase fetch error:", err);
-          setSyncStatus('⚠️ 連線失敗，請確認已執行建表 SQL 語法');
+          setSyncStatus('⚠️ 連線失敗，請確認資料庫權限');
         } finally {
           setLoading(false);
         }
       };
 
-      // 初始化連線與即時訂閱 (Realtime Instant Update)
       useEffect(() => {
         loadEventsFromSupabase();
 
-        // 開啟 Supabase Realtime 訂閱，當資料庫有任何變動，自動秒級刷新！
+        // 開啟 Supabase Realtime 訂閱
         const subscription = supabase
           .channel('schema-db-changes')
           .on('postgres_changes', { event: '*', schema: 'public' }, () => {
@@ -113,7 +114,6 @@
         };
       }, []);
 
-      // 搜尋與篩選活動
       const filteredEvents = useMemo(() => {
         return events.filter(e => 
           (e.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -150,6 +150,36 @@
         } catch (err) {
           console.error("Register submit error:", err);
           alert('⚠️ 報名失敗：' + (err.message || '請檢查資料庫權限'));
+        }
+      };
+
+      // ✏️ 修改 / 更新報名資料
+      const handleUpdateRegistration = async (regId, updatedData) => {
+        setEditingRegister(null);
+        try {
+          setSyncStatus('⚡ 正在更新報名資料...');
+          const { error } = await supabase
+            .from('registrations')
+            .update({
+              name: updatedData.name,
+              phone: updatedData.phone,
+              tents: Number(updatedData.tents || 1),
+              adults: Number(updatedData.adults || 0),
+              kids: Number(updatedData.kids || 0),
+              carNo: updatedData.carNo || '',
+              nightArrive: Boolean(updatedData.nightArrive),
+              note: updatedData.note || ''
+            })
+            .eq('id', String(regId));
+
+          if (error) throw error;
+
+          setSyncStatus('✅ 報名紀錄更新成功！');
+          alert('✏️ 報名資料已成功修改！');
+          loadEventsFromSupabase();
+        } catch (err) {
+          console.error("Update reg error:", err);
+          alert('⚠️ 更新報名失敗：' + err.message);
         }
       };
 
@@ -205,7 +235,41 @@
           loadEventsFromSupabase();
         } catch (err) {
           console.error("Create event error:", err);
-          alert('⚠️ 發起活動失敗：' + (err.message || '請確認是否已點擊 Run 執行建表 SQL'));
+          alert('⚠️ 發起活動失敗：' + (err.message || '請確認授權權限'));
+        }
+      };
+
+      // ✏️ 修改 / 更新活動資訊
+      const handleUpdateEvent = async (eventId, updatedData) => {
+        setEditingEvent(null);
+        try {
+          setSyncStatus('⚡ 正在更新活動內容...');
+          const { error } = await supabase
+            .from('events')
+            .update({
+              title: updatedData.title,
+              location: updatedData.location,
+              address: updatedData.address || '',
+              startDate: updatedData.startDate,
+              endDate: updatedData.endDate,
+              maxTents: Number(updatedData.maxTents || 6),
+              feePerTent: Number(updatedData.feePerTent || 0),
+              organizer: updatedData.organizer,
+              organizerPhone: updatedData.organizerPhone || '',
+              paymentInfo: updatedData.paymentInfo || '',
+              imageUrl: updatedData.imageUrl || '',
+              description: updatedData.description || ''
+            })
+            .eq('id', String(eventId));
+
+          if (error) throw error;
+
+          setSyncStatus('✅ 活動內容更新成功！');
+          alert('✏️ 活動資訊已成功修改！');
+          loadEventsFromSupabase();
+        } catch (err) {
+          console.error("Update event error:", err);
+          alert('⚠️ 更新活動失敗：' + err.message);
         }
       };
 
@@ -295,6 +359,8 @@
                 onOpenRegister={() => setShowRegisterModal(true)}
                 onCancelReg={handleCancelRegistration}
                 onDeleteEvent={handleDeleteEvent}
+                onEditEvent={(evt) => setEditingEvent(evt)}
+                onEditReg={(reg) => setEditingRegister(reg)}
               />
             ) : (
               <div>
@@ -349,9 +415,30 @@
 
           {/* 發起活動彈出視窗 */}
           {showCreateModal && (
-            <CreateEventModal 
+            <EventFormModal 
+              title="🏕️ 發起露營團露活動"
               onClose={() => setShowCreateModal(false)}
               onSubmit={handleCreateEvent}
+            />
+          )}
+
+          {/* 編輯活動彈出視窗 */}
+          {editingEvent && (
+            <EventFormModal 
+              title="✏️ 修改露營活動資訊"
+              initialData={editingEvent}
+              onClose={() => setEditingEvent(null)}
+              onSubmit={(data) => handleUpdateEvent(editingEvent.id, data)}
+            />
+          )}
+
+          {/* 編輯報名紀錄彈出視窗 */}
+          {editingRegister && selectedEvent && (
+            <RegisterModal 
+              event={selectedEvent}
+              initialData={editingRegister}
+              onClose={() => setEditingRegister(null)}
+              onSubmit={(eventId, data) => handleUpdateRegistration(editingRegister.id, data)}
             />
           )}
         </div>
@@ -513,7 +600,7 @@
     // ----------------------------------------------------
     // 組件 3：活動詳細視圖 & 已報名名單
     // ----------------------------------------------------
-    function EventDetailView({ event, onBack, onOpenRegister, onCancelReg, onDeleteEvent }) {
+    function EventDetailView({ event, onBack, onOpenRegister, onCancelReg, onDeleteEvent, onEditEvent, onEditReg }) {
       const regs = event.registrations || [];
       const totalBookedTents = regs.reduce((sum, r) => sum + Number(r.tents || 1), 0);
       const totalAdults = regs.reduce((sum, r) => sum + Number(r.adults || 0), 0);
@@ -523,18 +610,26 @@
 
       return (
         <div class="space-y-6">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between gap-2 flex-wrap">
             <button 
               onClick={onBack}
               class="inline-flex items-center gap-1 text-sm font-medium text-emerald-800 hover:text-emerald-900 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
               ⬅ 返回活動列表
             </button>
 
-            <button 
-              onClick={() => onDeleteEvent(event.id)}
-              class="inline-flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3.5 py-2 rounded-xl border border-rose-200 transition">
-              🗑️ 刪除此露營活動
-            </button>
+            <div class="flex items-center gap-2">
+              <button 
+                onClick={() => onEditEvent(event)}
+                class="inline-flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-3.5 py-2 rounded-xl border border-amber-200 transition">
+                ✏️ 編輯活動資訊
+              </button>
+
+              <button 
+                onClick={() => onDeleteEvent(event.id)}
+                class="inline-flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3.5 py-2 rounded-xl border border-rose-200 transition">
+                🗑️ 刪除活動
+              </button>
+            </div>
           </div>
 
           <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 grid grid-cols-1 lg:grid-cols-3">
@@ -618,7 +713,7 @@
                       <th class="p-3">車號</th>
                       <th class="p-3 text-center">夜衝</th>
                       <th class="p-3">備註 / 需求</th>
-                      <th class="p-3 text-right">管理</th>
+                      <th class="p-3 text-right">操作</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100">
@@ -633,11 +728,16 @@
                           {reg.nightArrive ? <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs">🌙 是</span> : <span class="text-slate-400 text-xs">否</span>}
                         </td>
                         <td class="p-3 text-xs text-slate-500 max-w-xs truncate">{reg.note || '-'}</td>
-                        <td class="p-3 text-right">
+                        <td class="p-3 text-right space-x-1">
+                          <button 
+                            onClick={() => onEditReg(reg)}
+                            class="text-xs font-semibold text-amber-700 hover:bg-amber-50 px-2 py-1 rounded transition">
+                            ✏️ 編輯
+                          </button>
                           <button 
                             onClick={() => onCancelReg(event.id, reg.id)}
-                            class="text-xs font-semibold text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded transition">
-                            取消報名
+                            class="text-xs font-semibold text-rose-500 hover:bg-rose-50 px-2 py-1 rounded transition">
+                            🗑️ 取消
                           </button>
                         </td>
                       </tr>
@@ -652,18 +752,18 @@
     }
 
     // ----------------------------------------------------
-    // 彈出視窗：露友填表報名 Modal
+    // 彈出視窗：露友填表報名 Modal (支援新增 & 編輯)
     // ----------------------------------------------------
-    function RegisterModal({ event, onClose, onSubmit }) {
+    function RegisterModal({ event, initialData, onClose, onSubmit }) {
       const [formData, setFormData] = useState({
-        name: '',
-        phone: '',
-        tents: 1,
-        adults: 2,
-        kids: 0,
-        carNo: '',
-        nightArrive: false,
-        note: ''
+        name: initialData ? initialData.name : '',
+        phone: initialData ? initialData.phone : '',
+        tents: initialData ? (initialData.tents || 1) : 1,
+        adults: initialData ? (initialData.adults || 2) : 2,
+        kids: initialData ? (initialData.kids || 0) : 0,
+        carNo: initialData ? (initialData.carNo || '') : '',
+        nightArrive: initialData ? Boolean(initialData.nightArrive) : false,
+        note: initialData ? (initialData.note || '') : ''
       });
 
       const handleSubmit = (e) => {
@@ -679,7 +779,9 @@
         <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div class="flex items-center justify-between border-b pb-3">
-              <h3 class="text-lg font-bold text-slate-800">✍️ 報名露營活動</h3>
+              <h3 class="text-lg font-bold text-slate-800">
+                {initialData ? '✏️ 修改報名資料' : '✍️ 報名露營活動'}
+              </h3>
               <button onClick={onClose} class="text-slate-400 hover:text-slate-600">✕</button>
             </div>
 
@@ -781,7 +883,7 @@
               <div class="flex justify-end gap-2 pt-2 border-t">
                 <button type="button" onClick={onClose} class="px-4 py-2 text-slate-500 font-medium">取消</button>
                 <button type="submit" class="px-5 py-2 bg-emerald-700 text-white font-bold rounded-lg shadow hover:bg-emerald-800">
-                  確認送出報名
+                  {initialData ? '儲存修改' : '確認送出報名'}
                 </button>
               </div>
             </form>
@@ -791,22 +893,22 @@
     }
 
     // ----------------------------------------------------
-    // 彈出視窗：發起露營活動 Modal
+    // 彈出視窗：發起 & 編輯露營活動 Modal
     // ----------------------------------------------------
-    function CreateEventModal({ onClose, onSubmit }) {
+    function EventFormModal({ title, initialData, onClose, onSubmit }) {
       const [formData, setFormData] = useState({
-        title: '',
-        location: '',
-        address: '',
-        startDate: '',
-        endDate: '',
-        maxTents: 6,
-        feePerTent: 1200,
-        organizer: '',
-        organizerPhone: '',
-        paymentInfo: '',
-        imageUrl: '',
-        description: ''
+        title: initialData ? initialData.title : '',
+        location: initialData ? initialData.location : '',
+        address: initialData ? (initialData.address || '') : '',
+        startDate: initialData ? initialData.startDate : '',
+        endDate: initialData ? initialData.endDate : '',
+        maxTents: initialData ? (initialData.maxTents || 6) : 6,
+        feePerTent: initialData ? (initialData.feePerTent || 1200) : 1200,
+        organizer: initialData ? initialData.organizer : '',
+        organizerPhone: initialData ? (initialData.organizerPhone || '') : '',
+        paymentInfo: initialData ? (initialData.paymentInfo || '') : '',
+        imageUrl: initialData ? (initialData.imageUrl || '') : '',
+        description: initialData ? (initialData.description || '') : ''
       });
 
       const handleSubmit = (e) => {
@@ -822,7 +924,7 @@
         <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl border border-slate-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div class="flex items-center justify-between border-b pb-3">
-              <h3 class="text-lg font-bold text-slate-800">🏕️ 發起露營團露活動</h3>
+              <h3 class="text-lg font-bold text-slate-800">{title}</h3>
               <button onClick={onClose} class="text-slate-400 hover:text-slate-600">✕</button>
             </div>
 
@@ -939,7 +1041,7 @@
               <div class="flex justify-end gap-2 pt-2 border-t">
                 <button type="button" onClick={onClose} class="px-4 py-2 text-slate-500 font-medium">取消</button>
                 <button type="submit" class="px-5 py-2 bg-emerald-700 text-white font-bold rounded-lg shadow hover:bg-emerald-800">
-                  發起露營活動
+                  {initialData ? '儲存修改' : '發起露營活動'}
                 </button>
               </div>
             </form>

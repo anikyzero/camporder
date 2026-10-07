@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏕️ 露營趣 - 露營活動發起與報名系統</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <!-- Babel CDN (for JSX compilation in browser) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/lucide-react@latest"></script>
+  <!-- Custom Font & Styles -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background-color: #f8fafc;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // 預設示範資料
+    const INITIAL_EVENTS = [
+      {
+        id: "evt-1",
+        title: "新竹尖石 - 樹頭露營區 森林包區團",
+        location: "新竹縣尖石鄉",
+        address: "新竹縣尖石鄉新樂村水田 4 鄰",
+        startDate: "2026-10-24",
+        endDate: "2026-10-25",
+        maxTents: 8,
+        feePerTent: 1200,
+        organizer: "大熊",
+        organizerPhone: "0912-345-678",
+        paymentInfo: "中國信託 (822) 1234-5678-9012 (戶名: 陳大熊)",
+        imageUrl: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80",
+        description: "高海拔優質營地，夜間可賞滿天星空與雲海！有提供熱水浴室與電力設施。營區禁打麻將與大聲喧嘩，歡迎親子一同放鬆。",
+        registrations: [
+          { id: "reg-1", name: "大熊", phone: "0912-345-678", tents: 1, adults: 2, kids: 2, carNo: "ABC-1234", nightArrive: true, note: "主辦人，預計週五 20:00 夜衝" },
+          { id: "reg-2", name: "小明家", phone: "0922-111-222", tents: 1, adults: 2, kids: 1, carNo: "DEF-5678", nightArrive: false, note: "週六早上 10 點抵達" },
+          { id: "reg-3", name: "阿傑", phone: "0933-444-555", tents: 2, adults: 4, kids: 0, carNo: "GHI-9012", nightArrive: true, note: "帶卡式爐與客廳帳" }
+        ]
+      },
+      {
+        id: "evt-2",
+        title: "苗栗泰安 - 雲海景觀營地 秋季小團",
+        location: "苗栗縣泰安鄉",
+        address: "苗栗縣泰安鄉清安村 8 鄰",
+        startDate: "2026-11-07",
+        endDate: "2026-11-08",
+        maxTents: 5,
+        feePerTent: 1500,
+        organizer: "Lisa",
+        organizerPhone: "0955-888-999",
+        paymentInfo: "台新銀行 (812) 9876-5432-1098",
+        imageUrl: "https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?auto=format&fit=crop&w=800&q=80",
+        description: "秋涼賞楓露營！看壯觀雲海最佳季節，營區草皮漂亮保養良好。包含營火晚會特別活動。",
+        registrations: [
+          { id: "reg-4", name: "Lisa", phone: "0955-888-999", tents: 1, adults: 2, kids: 0, carNo: "JKL-3456", nightArrive: false, note: "準備熱紅酒" }
+        ]
+      }
+    ];
+
+    function App() {
+      // 本地儲存資料讀取與初始化
+      const [events, setEvents] = useState(() => {
+        const saved = localStorage.getItem('camp_events');
+        return saved ? JSON.parse(saved) : INITIAL_EVENTS;
+      });
+
+      const [currentView, setCurrentView] = useState('list'); // 'list' | 'calendar'
+      const [selectedEvent, setSelectedEvent] = useState(null);
+      const [showRegisterModal, setShowRegisterModal] = useState(false);
+      const [showCreateModal, setShowCreateModal] = useState(false);
+      const [searchTerm, setSearchTerm] = useState('');
+
+      // 同步寫入 LocalStorage
+      useEffect(() => {
+        localStorage.setItem('camp_events', JSON.stringify(events));
+      }, [events]);
+
+      // 搜尋與篩選活動
+      const filteredEvents = useMemo(() => {
+        return events.filter(e => 
+          e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          e.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          e.organizer.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }, [events, searchTerm]);
+
+      // 新增報名
+      const handleRegisterSubmit = (eventId, regData) => {
+        setEvents(prev => prev.map(evt => {
+          if (evt.id === eventId) {
+            const newReg = { ...regData, id: 'reg-' + Date.now() };
+            const updatedRegs = [...evt.registrations, newReg];
+            // 更新目前選取的事件
+            const updatedEvt = { ...evt, registrations: updatedRegs };
+            if (selectedEvent && selectedEvent.id === eventId) {
+              setSelectedEvent(updatedEvt);
+            }
+            return updatedEvt;
+          }
+          return evt;
+        }));
+        setShowRegisterModal(false);
+        alert('🎉 報名成功！發起人將會審核您的訊息。');
+      };
+
+      // 取消報名
+      const handleCancelRegistration = (eventId, regId) => {
+        if (!confirm('確定要取消此報名嗎？')) return;
+        setEvents(prev => prev.map(evt => {
+          if (evt.id === eventId) {
+            const updatedRegs = evt.registrations.filter(r => r.id !== regId);
+            const updatedEvt = { ...evt, registrations: updatedRegs };
+            if (selectedEvent && selectedEvent.id === eventId) {
+              setSelectedEvent(updatedEvt);
+            }
+            return updatedEvt;
+          }
+          return evt;
+        }));
+      };
+
+      // 新增活動
+      const handleCreateEvent = (newEventData) => {
+        const newEvent = {
+          ...newEventData,
+          id: 'evt-' + Date.now(),
+          registrations: []
+        };
+        setEvents(prev => [newEvent, ...prev]);
+        setShowCreateModal(false);
+        alert('🏕️ 露營活動發起成功！其他露友現在可以進行報名。');
+      };
+
+      // 刪除活動 (僅限測試/主辦人)
+      const handleDeleteEvent = (eventId) => {
+        if (!confirm('確定要刪除這個露營活動嗎？此操作不可復原。')) return;
+        setEvents(prev => prev.filter(e => e.id !== eventId));
+        setSelectedEvent(null);
+      };
+
+      return (
+        <div class="min-h-screen flex flex-col">
+          {/* 頂部導覽列 Header */}
+          <header class="bg-emerald-800 text-white shadow-md sticky top-0 z-30">
+            <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div class="flex items-center gap-3 cursor-pointer" onClick={() => setSelectedEvent(null)}>
+                <span class="text-3xl">🏕️</span>
+                <div>
+                  <h1 class="text-xl font-bold tracking-wide">露營趣 CampOrder</h1>
+                  <p class="text-xs text-emerald-200">露營群組活動發起與自主報名系統</p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                {/* 視圖切換 */}
+                <div class="bg-emerald-900/60 p-1 rounded-lg flex gap-1 text-sm font-medium">
+                  <button 
+                    onClick={() => { setCurrentView('list'); setSelectedEvent(null); }}
+                    class={`px-3 py-1.5 rounded-md transition ${currentView === 'list' ? 'bg-white text-emerald-900 shadow' : 'text-emerald-100 hover:text-white'}`}>
+                    📋 活動列表
+                  </button>
+                  <button 
+                    onClick={() => { setCurrentView('calendar'); setSelectedEvent(null); }}
+                    class={`px-3 py-1.5 rounded-md transition ${currentView === 'calendar' ? 'bg-white text-emerald-900 shadow' : 'text-emerald-100 hover:text-white'}`}>
+                    📅 日期總表
+                  </button>
+                </div>
+
+                {/* 發起活動按鈕 */}
+                <button 
+                  onClick={() => setShowCreateModal(true)}
+                  class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-1.5 rounded-lg shadow transition flex items-center gap-1.5 text-sm">
+                  <span>➕</span> 發起團露
+                </button>
+              </div>
+            </div>
+          </header>
+
+          {/* 主要內容區 Main Content */}
+          <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-6">
+            
+            {/* 如果正在檢視活動詳情 */}
+            {selectedEvent ? (
+              <EventDetailView 
+                event={selectedEvent} 
+                onBack={() => setSelectedEvent(null)}
+                onOpenRegister={() => setShowRegisterModal(true)}
+                onCancelReg={handleCancelRegistration}
+                onDeleteEvent={handleDeleteEvent}
+              />
+            ) : (
+              <div>
+                {/* 搜尋與篩選 Bar */}
+                <div class="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                  <div class="relative w-full sm:w-80">
+                    <input 
+                      type="text"
+                      placeholder="搜尋營地名稱、地點或主辦人..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <span class="absolute left-3 top-2.5 text-slate-400">🔍</span>
+                  </div>
+
+                  <div class="text-sm text-slate-600 font-medium self-end sm:self-center">
+                    目前共有 <span class="text-emerald-700 font-bold text-base">{filteredEvents.length}</span> 個活動
+                  </div>
+                </div>
+
+                {/* 顯示列表視圖 OR 月曆視圖 */}
+                {currentView === 'list' ? (
+                  <EventListView events={filteredEvents} onSelectEvent={setSelectedEvent} />
+                ) : (
+                  <CalendarView events={events} onSelectEvent={setSelectedEvent} />
+                )}
+              </div>
+            )}
+          </main>
+
+          {/* 頁尾 Footer */}
+          <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 text-center text-xs mt-12">
+            <p>🏕️ 露營趣 CampOrder - 專為露營社群設計的免費線上報名平台</p>
+            <p class="mt-1 text-slate-500">支援同步至 Google 試算表 & Vercel / Netlify 一鍵部署</p>
+          </footer>
+
+          {/* 報名彈出視窗 Modal */}
+          {showRegisterModal && selectedEvent && (
+            <RegisterModal 
+              event={selectedEvent}
+              onClose={() => setShowRegisterModal(false)}
+              onSubmit={handleRegisterSubmit}
+            />
+          )}
+
+          {/* 發起活動彈出視窗 Modal */}
+          {showCreateModal && (
+            <CreateEventModal 
+              onClose={() => setShowCreateModal(false)}
+              onSubmit={handleCreateEvent}
+            />
+          )}
+        </div>
+      );
+    }
+
+    // ----------------------------------------------------
+    // 組件 1：活動卡片列表視圖
+    // ----------------------------------------------------
+    function EventListView({ events, onSelectEvent }) {
+      if (events.length === 0) {
+        return (
+          <div class="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-300">
+            <div class="text-5xl mb-3">🎪</div>
+            <h3 class="text-lg font-bold text-slate-700">目前沒有找到任何露營活動</h3>
+            <p class="text-slate-500 text-sm mt-1">點擊右上角的「發起團露」來建立第一個露營活動吧！</p>
+          </div>
+        );
+      }
+
+      return (
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {events.map(evt => {
+            const totalBooked = evt.registrations.reduce((sum, r) => sum + Number(r.tents || 1), 0);
+            const remainingTents = evt.maxTents - totalBooked;
+            const isFull = remainingTents <= 0;
+
+            return (
+              <div 
+                key={evt.id} 
+                onClick={() => onSelectEvent(evt)}
+                class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition cursor-pointer border border-slate-200/80 flex flex-col group">
+                {/* 圖片區 */}
+                <div class="relative h-48 overflow-hidden bg-slate-100">
+                  <img 
+                    src={evt.imageUrl || "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80"} 
+                    alt={evt.title}
+                    class="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                  />
+                  <div class="absolute top-3 left-3 bg-slate-900/75 backdrop-blur-sm text-white px-2.5 py-1 rounded-full text-xs font-semibold">
+                    📍 {evt.location}
+                  </div>
+                  <div className={`absolute top-3 right-3 px-2.5 py-1 rounded-full text-xs font-bold shadow ${isFull ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`}>
+                    {isFull ? '🔴 已額滿' : `🟢 剩 ${remainingTents} 帳`}
+                  </div>
+                </div>
+
+                {/* 內容區 */}
+                <div class="p-5 flex-grow flex flex-col justify-between">
+                  <div>
+                    <h3 class="font-bold text-slate-800 text-lg group-hover:text-emerald-700 transition line-clamp-1">
+                      {evt.title}
+                    </h3>
+                    
+                    <div class="mt-3 space-y-1.5 text-xs text-slate-600">
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-slate-400">📅 日期：</span>
+                        <span class="font-medium text-slate-700">{evt.startDate} ～ {evt.endDate}</span>
+                      </div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-slate-400">⛺ 規模：</span>
+                        <span class="font-medium text-slate-700">限制 {evt.maxTents} 帳 (目前報名 {totalBooked} 帳)</span>
+                      </div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-slate-400">💰 費用：</span>
+                        <span class="font-medium text-emerald-700">NT$ {evt.feePerTent} / 帳</span>
+                      </div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-slate-400">👤 主辦：</span>
+                        <span class="font-medium text-slate-700">{evt.organizer}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 底部動作 */}
+                  <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span class="text-slate-400">報名狀況：{evt.registrations.length} 組成員</span>
+                    <span class="text-emerald-700 font-bold group-hover:translate-x-1 transition">查看詳情 & 報名 ➔</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // ----------------------------------------------------
+    // 組件 2：日曆總表視圖 (Calendar View)
+    // ----------------------------------------------------
+    function CalendarView({ events, onSelectEvent }) {
+      const [currentMonth, setCurrentMonth] = useState(new Date(2026, 9, 1)); // 2026年10月
+
+      const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
+      const firstDayOfWeek = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
+
+      const prevMonth = () => {
+        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+      };
+
+      const nextMonth = () => {
+        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+      };
+
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth() + 1;
+
+      // 日曆格子生成
+      const calendarDays = [];
+      for (let i = 0; i < firstDayOfWeek; i++) {
+        calendarDays.push(null);
+      }
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        calendarDays.push({ day: d, dateStr });
+      }
+
+      return (
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+          {/* 日曆切換頭 */}
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <span>📅</span> {year} 年 {month} 月 露營行事曆
+            </h2>
+            <div class="flex items-center gap-2">
+              <button onClick={prevMonth} class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">◀ 上個月</button>
+              <button onClick={() => setCurrentMonth(new Date())} class="px-3 py-1.5 bg-emerald-100 text-emerald-800 hover:bg-emerald-200 rounded-lg text-sm font-medium">今天</button>
+              <button onClick={nextMonth} class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">下個月 ▶</button>
+            </div>
+          </div>
+
+          {/* 星期標頭 */}
+          <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-500 mb-2">
+            <div class="text-rose-500">週日</div>
+            <div>週一</div>
+            <div>週二</div>
+            <div>週三</div>
+            <div>週四</div>
+            <div>週五</div>
+            <div class="text-emerald-600">週六</div>
+          </div>
+
+          {/* 日期網格 */}
+          <div class="grid grid-cols-7 gap-2">
+            {calendarDays.map((cell, idx) => {
+              if (!cell) {
+                return <div key={'empty-' + idx} class="h-28 bg-slate-50/50 rounded-xl"></div>;
+              }
+
+              // 找當天涵蓋的活動
+              const dayEvents = events.filter(e => {
+                return cell.dateStr >= e.startDate && cell.dateStr <= e.endDate;
+              });
+
+              return (
+                <div key={cell.dateStr} class="h-28 bg-slate-50 hover:bg-slate-100/80 p-2 rounded-xl border border-slate-200/60 flex flex-col justify-between overflow-hidden">
+                  <div class="text-xs font-bold text-slate-600">{cell.day}</div>
+                  
+                  <div class="space-y-1 overflow-y-auto custom-scrollbar flex-grow mt-1">
+                    {dayEvents.map(evt => (
+                      <div 
+                        key={evt.id}
+                        onClick={() => onSelectEvent(evt)}
+                        class="bg-emerald-700 text-white text-[11px] p-1.5 rounded-lg cursor-pointer hover:bg-emerald-800 transition truncate shadow-xs font-medium"
+                        title={evt.title}>
+                        ⛺ {evt.title}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // ----------------------------------------------------
+    // 組件 3：活動詳細視圖 & 已報名名單
+    // ----------------------------------------------------
+    function EventDetailView({ event, onBack, onOpenRegister, onCancelReg, onDeleteEvent }) {
+      const totalBookedTents = event.registrations.reduce((sum, r) => sum + Number(r.tents || 1), 0);
+      const totalAdults = event.registrations.reduce((sum, r) => sum + Number(r.adults || 0), 0);
+      const totalKids = event.registrations.reduce((sum, r) => sum + Number(r.kids || 0), 0);
+      const remainingTents = event.maxTents - totalBookedTents;
+      const isFull = remainingTents <= 0;
+
+      return (
+        <div class="space-y-6">
+          <button 
+            onClick={onBack}
+            class="inline-flex items-center gap-1 text-sm font-medium text-emerald-800 hover:text-emerald-900 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
+            ⬅ 返回活動列表
+          </button>
+
+          {/* 主活動資訊卡片 */}
+          <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 grid grid-cols-1 lg:grid-cols-3">
+            <div class="lg:col-span-1 h-64 lg:h-auto relative">
+              <img 
+                src={event.imageUrl || "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80"} 
+                alt={event.title} 
+                class="w-full h-full object-cover"
+              />
+            </div>
+            
+            <div class="lg:col-span-2 p-6 flex flex-col justify-between space-y-4">
+              <div>
+                <div class="flex items-center justify-between gap-2 flex-wrap mb-2">
+                  <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">
+                    📍 {event.location}
+                  </span>
+                  <button onClick={() => onDeleteEvent(event.id)} class="text-xs text-rose-500 hover:underline">
+                    🗑️ 刪除此活動
+                  </button>
+                </div>
+
+                <h2 class="text-2xl font-bold text-slate-800">{event.title}</h2>
+                <p class="text-slate-600 text-sm mt-3 leading-relaxed whitespace-pre-line">{event.description}</p>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl text-xs">
+                <div>
+                  <span class="text-slate-400 block">📅 活動日期</span>
+                  <span class="font-bold text-slate-800 mt-0.5 block">{event.startDate} ~ {event.endDate}</span>
+                </div>
+                <div>
+                  <span class="text-slate-400 block">⛺ 額度狀況</span>
+                  <span class="font-bold text-emerald-700 mt-0.5 block">上限 {event.maxTents} 帳 / 剩 {remainingTents} 帳</span>
+                </div>
+                <div>
+                  <span class="text-slate-400 block">💰 營位費用</span>
+                  <span class="font-bold text-slate-800 mt-0.5 block">NT$ {event.feePerTent} / 帳</span>
+                </div>
+                <div>
+                  <span class="text-slate-400 block">👤 主辦人</span>
+                  <span class="font-bold text-slate-800 mt-0.5 block">{event.organizer} ({event.organizerPhone})</span>
+                </div>
+              </div>
+
+              {/* 匯款資訊區 */}
+              {event.paymentInfo && (
+                <div class="bg-amber-50 border border-amber-200/80 p-3 rounded-xl text-xs text-amber-900">
+                  <span class="font-bold">💳 訂金/匯款資訊：</span> {event.paymentInfo}
+                </div>
+              )}
+
+              {/* 報名按鈕 */}
+              <div class="flex items-center justify-between pt-2">
+                <div class="text-xs text-slate-500">
+                  目前統計：已報名 <b class="text-slate-800">{totalBookedTents}</b> 帳 / <b class="text-slate-800">{totalAdults}</b> 大 <b class="text-slate-800">{totalKids}</b> 小
+                </div>
+
+                <button 
+                  disabled={isFull}
+                  onClick={onOpenRegister}
+                  class={`px-6 py-2.5 rounded-xl font-bold text-sm shadow transition ${
+                    isFull 
+                      ? 'bg-slate-300 text-slate-500 cursor-not-allowed' 
+                      : 'bg-emerald-700 hover:bg-emerald-800 text-white'
+                  }`}>
+                  {isFull ? '🔴 已額滿' : '✍️ 我要報名參團'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 報名名單表格 */}
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <span>📋</span> 已報名露友明細 ({event.registrations.length} 組)
+            </h3>
+
+            {event.registrations.length === 0 ? (
+              <p class="text-slate-400 text-sm py-8 text-center">尚無露友報名，成為第一個報名的人吧！</p>
+            ) : (
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-600">
+                  <thead class="bg-slate-50 text-xs text-slate-500 uppercase font-semibold">
+                    <tr>
+                      <th class="p-3">露友暱稱</th>
+                      <th class="p-3">電話</th>
+                      <th class="p-3 text-center">報名帳數</th>
+                      <th class="p-3 text-center">人數 (大/小)</th>
+                      <th class="p-3">車號</th>
+                      <th class="p-3 text-center">夜衝</th>
+                      <th class="p-3">備註 / 需求</th>
+                      <th class="p-3 text-right">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100">
+                    {event.registrations.map((reg) => (
+                      <tr key={reg.id} class="hover:bg-slate-50/80">
+                        <td class="p-3 font-bold text-slate-800">{reg.name}</td>
+                        <td class="p-3 text-slate-500">{reg.phone}</td>
+                        <td class="p-3 text-center font-semibold text-emerald-700">{reg.tents || 1} 帳</td>
+                        <td class="p-3 text-center">{reg.adults} 大 {reg.kids} 小</td>
+                        <td class="p-3 font-mono text-xs text-slate-600">{reg.carNo || '-'}</td>
+                        <td class="p-3 text-center">
+                          {reg.nightArrive ? <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs">🌙 是</span> : <span class="text-slate-400 text-xs">否</span>}
+                        </td>
+                        <td class="p-3 text-xs text-slate-500 max-w-xs truncate">{reg.note || '-'}</td>
+                        <td class="p-3 text-right">
+                          <button 
+                            onClick={() => onCancelReg(event.id, reg.id)}
+                            class="text-xs text-rose-500 hover:text-rose-700 hover:underline">
+                            取消報名
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ----------------------------------------------------
+    // 彈出視窗 1：露友填表報名 Modal
+    // ----------------------------------------------------
+    function RegisterModal({ event, onClose, onSubmit }) {
+      const [formData, setFormData] = useState({
+        name: '',
+        phone: '',
+        tents: 1,
+        adults: 2,
+        kids: 0,
+        carNo: '',
+        nightArrive: false,
+        note: ''
+      });
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!formData.name || !formData.phone) {
+          alert('請填寫姓名與電話！');
+          return;
+        }
+        onSubmit(event.id, formData);
+      };
+
+      return (
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div class="flex items-center justify-between border-b pb-3">
+              <h3 class="text-lg font-bold text-slate-800">✍️ 報名露營活動</h3>
+              <button onClick={onClose} class="text-slate-400 hover:text-slate-600">✕</button>
+            </div>
+
+            <p class="text-xs text-emerald-800 bg-emerald-50 p-2.5 rounded-lg mt-3 font-medium">
+              活動：{event.title} ({event.startDate})
+            </p>
+
+            <form onSubmit={handleSubmit} class="mt-4 space-y-4 text-sm">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-medium text-slate-700 mb-1">暱稱 / 姓名 *</label>
+                  <input 
+                    type="text" required
+                    placeholder="例: 阿傑"
+                    value={formData.name}
+                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    class="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label class="block font-medium text-slate-700 mb-1">聯絡電話 *</label>
+                  <input 
+                    type="tel" required
+                    placeholder="例: 0912-345678"
+                    value={formData.phone}
+                    onChange={e => setFormData({...formData, phone: e.target.value})}
+                    class="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <label class="block font-medium text-slate-700 mb-1">報名帳數</label>
+                  <select 
+                    value={formData.tents}
+                    onChange={e => setFormData({...formData, tents: Number(e.target.value)})}
+                    class="w-full p-2 border border-slate-300 rounded-lg text-sm">
+                    <option value={1}>1 帳</option>
+                    <option value={2}>2 帳</option>
+                    <option value={3}>3 帳</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block font-medium text-slate-700 mb-1">大人人數</label>
+                  <input 
+                    type="number" min="1" max="10"
+                    value={formData.adults}
+                    onChange={e => setFormData({...formData, adults: Number(e.target.value)})}
+                    class="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label class="block font-medium text-slate-700 mb-1">小孩人數</label>
+                  <input 
+                    type="number" min="0" max="10"
+                    value={formData.kids}
+                    onChange={e => setFormData({...formData, kids: Number(e.target.value)})}
+                    class="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block font-medium text-slate-700 mb-1">車牌號碼 (營區開門紀錄用)</label>
+                <input 
+                  type="text" 
+                  placeholder="例: ABC-1234"
+                  value={formData.carNo}
+                  onChange={e => setFormData({...formData, carNo: e.target.value})}
+                  class="w-full p-2 border border-slate-300 rounded-lg text-sm uppercase"
+                />
+              </div>
+
+              <div class="flex items-center gap-2 bg-purple-50 p-3 rounded-lg border border-purple-100">
+                <input 
+                  type="checkbox" 
+                  id="nightArrive"
+                  checked={formData.nightArrive}
+                  onChange={e => setFormData({...formData, nightArrive: e.target.checked})}
+                  class="w-4 h-4 text-purple-600 rounded"
+                />
+                <label htmlFor="nightArrive" class="text-xs text-purple-900 font-medium cursor-pointer">
+                  🌙 預計週五「夜衝」(入場時間詳見主辦說明)
+                </label>
+              </div>
+
+              <div>
+                <label class="block font-medium text-slate-700 mb-1">備註 / 租借裝備需求</label>
+                <textarea 
+                  rows="2"
+                  placeholder="例: 需要代租客廳帳 / 預計攜帶大型寵物犬"
+                  value={formData.note}
+                  onChange={e => setFormData({...formData, note: e.target.value})}
+                  class="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                ></textarea>
+              </div>
+
+              <div class="flex justify-end gap-2 pt-2 border-t">
+                <button type="button" onClick={onClose} class="px-4 py-2 text-slate-500 font-medium">取消</button>
+                <button type="submit" class="px-5 py-2 bg-emerald-700 text-white font-bold rounded-lg shadow hover:bg-emerald-800">
+                  確認送出報名
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // ----------------------------------------------------
+    // 彈出視窗 2：發起露營活動 Modal
+    // ----------------------------------------------------
+    function CreateEventModal({ onClose, onSubmit }) {
+      const [formData, setFormData] = useState({
+        title: '',
+        location: '',
+        address: '',
+        startDate: '',
+        endDate: '',
+        maxTents: 6,
+        feePerTent: 1200,
+        organizer: '',
+        organizerPhone: '',
+        paymentInfo: '',
+        imageUrl: '',
+        description: ''
+      });
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!formData.title || !formData.startDate || !formData.endDate || !formData.organizer) {
+          alert('請完整填寫標題、日期與主辦人資訊！');
+          return;
+        }
+        onSubmit(formData);
+      };
+
+      return (
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl border border-slate-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div class="flex items-center justify-between border-b pb-3">
+              <h3 class="text-lg font-bold text-slate-800">🏕️ 發起露營團露活動</h3>
+              <button onClick={onClose} class="text-slate-400 hover:text-slate-600">✕</button>
+            </div>
+
+            <form onSubmit={handleSubmit} class="mt-4 space-y-4 text-sm">
+              <div>
+                <label class="block font-medium text-slate-700 mb-1">活動名稱 *</label>
+                <input 
+                  type="text" required
+                  placeholder="例: 新竹尖石 - 樹頭露營區 森林包區團"
+                  value={formData.title}
+                  onChange={e => setFormData({...formData, title: e.target.value})}
+                  class="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                />
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-medium text-slate-700 mb-1">地區 (縣市/鄉鎮)</label>
+                  <input 
+                    type="text" required
+                    placeholder="例: 新竹縣尖石鄉"
+                    value={formData.location}
+                    onChange={e => setFormData({...formData, location: e.target.value})}
+                    class="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label class="block font-medium text-slate-700 mb-1">預計開放帳數 *</label>
+                  <input 
+                    type="number" min="1" max="50" required
+                    value={formData.maxTents}
+                    onChange={e => setFormData({...formData, maxTents: Number(e.target.value)})}
+                    class="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-medium text-slate-700 mb-1">開始日期 *</label>
+                  <input 
+                    type="date" required
+                    value={formData.startDate}
+                    onChange={e => setFormData({...formData, startDate: e.target.value})}
+                    class="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label class="block font-medium text-slate-700 mb-1">結束日期 *</label>
+                  <input 
+                    type="date" required
+                    value={formData.endDate}
+                    onChange={e => setFormData({...formData, endDate: e.target.value})}
+                    class="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block font-medium text-slate-700 mb-1">每帳費用 (NT$)</label>
+                  <input 
+                    type="number" step="100"
+                    value={formData.feePerTent}
+                    onChange={e => setFormData({...formData, feePerTent: Number(e.target.value)})}
+                    class="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label class="block font-medium text-slate-700 mb-1">主辦人暱稱 *</label>
+                  <input 
+                    type="text" required
+                    placeholder="例: 大熊"
+                    value={formData.organizer}
+                    onChange={e => setFormData({...formData, organizer: e.target.value})}
+                    class="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block font-medium text-slate-700 mb-1">訂金 / 匯款資訊</label>
+                <input 
+                  type="text" 
+                  placeholder="例: 中國信託 (822) 1234-5678-9012 (戶名: 陳大熊)"
+                  value={formData.paymentInfo}
+                  onChange={e => setFormData({...formData, paymentInfo: e.target.value})}
+                  class="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                />
+              </div>
+
+              <div>
+                <label class="block font-medium text-slate-700 mb-1">營地封面照片網址 (選填)</label>
+                <input 
+                  type="url" 
+                  placeholder="https://..."
+                  value={formData.imageUrl}
+                  onChange={e => setFormData({...formData, imageUrl: e.target.value})}
+                  class="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                />
+              </div>
+
+              <div>
+                <label class="block font-medium text-slate-700 mb-1">活動簡介與營區注意事項</label>
+                <textarea 
+                  rows="3"
+                  placeholder="詳細介紹營區設施、夜衝規定、退款規則等..."
+                  value={formData.description}
+                  onChange={e => setFormData({...formData, description: e.target.value})}
+                  class="w-full p-2 border border-slate-300 rounded-lg text-sm"
+                ></textarea>
+              </div>
+
+              <div class="flex justify-end gap-2 pt-2 border-t">
+                <button type="button" onClick={onClose} class="px-4 py-2 text-slate-500 font-medium">取消</button>
+                <button type="submit" class="px-5 py-2 bg-emerald-700 text-white font-bold rounded-lg shadow hover:bg-emerald-800">
+                  發起露營活動
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>

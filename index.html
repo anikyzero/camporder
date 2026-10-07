@@ -9,12 +9,9 @@
   <!-- React & ReactDOM CDN -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <!-- Babel CDN (for JSX compilation in browser) -->
+  <!-- Babel CDN -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://unpkg.com/lucide-react@latest"></script>
-  <!-- Custom Font & Styles -->
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
     body {
@@ -37,7 +34,10 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
 
-    // 預設示範資料
+    // 🔗 您的 Google Apps Script 後端 API 網址
+    const API_URL = "https://script.google.com/macros/s/AKfycbwihVgkaIm-crh8uPcxQORK87NR1IuEvLG3dOwzmK1QMkgeXg6uuTi8paw5J9WmgoH8ag/exec";
+
+    // 預設備份資料 (當雲端初次無資料時展示)
     const INITIAL_EVENTS = [
       {
         id: "evt-1",
@@ -54,67 +54,65 @@
         imageUrl: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80",
         description: "高海拔優質營地，夜間可賞滿天星空與雲海！有提供熱水浴室與電力設施。營區禁打麻將與大聲喧嘩，歡迎親子一同放鬆。",
         registrations: [
-          { id: "reg-1", name: "大熊", phone: "0912-345-678", tents: 1, adults: 2, kids: 2, carNo: "ABC-1234", nightArrive: true, note: "主辦人，預計週五 20:00 夜衝" },
-          { id: "reg-2", name: "小明家", phone: "0922-111-222", tents: 1, adults: 2, kids: 1, carNo: "DEF-5678", nightArrive: false, note: "週六早上 10 點抵達" },
-          { id: "reg-3", name: "阿傑", phone: "0933-444-555", tents: 2, adults: 4, kids: 0, carNo: "GHI-9012", nightArrive: true, note: "帶卡式爐與客廳帳" }
-        ]
-      },
-      {
-        id: "evt-2",
-        title: "苗栗泰安 - 雲海景觀營地 秋季小團",
-        location: "苗栗縣泰安鄉",
-        address: "苗栗縣泰安鄉清安村 8 鄰",
-        startDate: "2026-11-07",
-        endDate: "2026-11-08",
-        maxTents: 5,
-        feePerTent: 1500,
-        organizer: "Lisa",
-        organizerPhone: "0955-888-999",
-        paymentInfo: "台新銀行 (812) 9876-5432-1098",
-        imageUrl: "https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?auto=format&fit=crop&w=800&q=80",
-        description: "秋涼賞楓露營！看壯觀雲海最佳季節，營區草皮漂亮保養良好。包含營火晚會特別活動。",
-        registrations: [
-          { id: "reg-4", name: "Lisa", phone: "0955-888-999", tents: 1, adults: 2, kids: 0, carNo: "JKL-3456", nightArrive: false, note: "準備熱紅酒" }
+          { id: "reg-1", name: "大熊", phone: "0912-345-678", tents: 1, adults: 2, kids: 2, carNo: "ABC-1234", nightArrive: true, note: "主辦人，預計週五 20:00 夜衝" }
         ]
       }
     ];
 
     function App() {
-      // 本地儲存資料讀取與初始化
-      const [events, setEvents] = useState(() => {
-        const saved = localStorage.getItem('camp_events');
-        return saved ? JSON.parse(saved) : INITIAL_EVENTS;
-      });
-
+      const [events, setEvents] = useState(INITIAL_EVENTS);
+      const [loading, setLoading] = useState(false);
+      const [syncStatus, setSyncStatus] = useState('☁️ 雲端實時連線中');
       const [currentView, setCurrentView] = useState('list'); // 'list' | 'calendar'
       const [selectedEvent, setSelectedEvent] = useState(null);
       const [showRegisterModal, setShowRegisterModal] = useState(false);
       const [showCreateModal, setShowCreateModal] = useState(false);
       const [searchTerm, setSearchTerm] = useState('');
 
-      // 同步寫入 LocalStorage
+      // 📥 從 Google 試算表讀取雲端最新資料
+      const loadEventsFromCloud = async () => {
+        setLoading(true);
+        setSyncStatus('🔄 正在同步 Google 雲端數據...');
+        try {
+          const res = await fetch(API_URL);
+          const result = await res.json();
+          if (result.status === 'success' && Array.isArray(result.data) && result.data.length > 0) {
+            setEvents(result.data);
+            setSyncStatus('✅ 已成功與 Google 試算表同步');
+          } else {
+            setSyncStatus('☁️ 雲端已連線 (目前尚無露營活動)');
+          }
+        } catch (err) {
+          console.error("Cloud fetch error:", err);
+          setSyncStatus('⚠️ 雲端讀取失敗，展示本地暫存');
+        } finally {
+          setLoading(false);
+        }
+      };
+
       useEffect(() => {
-        localStorage.setItem('camp_events', JSON.stringify(events));
-      }, [events]);
+        loadEventsFromCloud();
+      }, []);
 
       // 搜尋與篩選活動
       const filteredEvents = useMemo(() => {
         return events.filter(e => 
-          e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          e.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          e.organizer.toLowerCase().includes(searchTerm.toLowerCase())
+          (e.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (e.location || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (e.organizer || '').toLowerCase().includes(searchTerm.toLowerCase())
         );
       }, [events, searchTerm]);
 
-      // 新增報名
-      const handleRegisterSubmit = (eventId, regData) => {
+      // 📤 新增報名並發送給 Google Apps Script API
+      const handleRegisterSubmit = async (eventId, regData) => {
+        const newReg = { ...regData, id: 'reg-' + Date.now(), eventId };
+        
+        // 先即時更新 UI 畫面 (極速體驗)
         setEvents(prev => prev.map(evt => {
-          if (evt.id === eventId) {
-            const newReg = { ...regData, id: 'reg-' + Date.now() };
-            const updatedRegs = [...evt.registrations, newReg];
-            // 更新目前選取的事件
+          if (String(evt.id) === String(eventId)) {
+            const updatedRegs = [...(evt.registrations || []), newReg];
             const updatedEvt = { ...evt, registrations: updatedRegs };
-            if (selectedEvent && selectedEvent.id === eventId) {
+            if (selectedEvent && String(selectedEvent.id) === String(eventId)) {
               setSelectedEvent(updatedEvt);
             }
             return updatedEvt;
@@ -122,42 +120,53 @@
           return evt;
         }));
         setShowRegisterModal(false);
-        alert('🎉 報名成功！發起人將會審核您的訊息。');
+
+        // 背景非同步寫入 Google 試算表
+        try {
+          setSyncStatus('⏳ 正在寫入 Google 雲端試算表...');
+          await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'register',
+              data: newReg
+            })
+          });
+          setSyncStatus('✅ 報名已成功寫入 Google 試算表！');
+          alert('🎉 報名成功！資料已同步儲存至 Google 試算表，其他露友現在也看得見囉！');
+        } catch (err) {
+          console.error("Register submit error:", err);
+          alert('⚠️ 報名已在本地生效，但寫入雲端時發生小錯誤。');
+        }
       };
 
-      // 取消報名
-      const handleCancelRegistration = (eventId, regId) => {
-        if (!confirm('確定要取消此報名嗎？')) return;
-        setEvents(prev => prev.map(evt => {
-          if (evt.id === eventId) {
-            const updatedRegs = evt.registrations.filter(r => r.id !== regId);
-            const updatedEvt = { ...evt, registrations: updatedRegs };
-            if (selectedEvent && selectedEvent.id === eventId) {
-              setSelectedEvent(updatedEvt);
-            }
-            return updatedEvt;
-          }
-          return evt;
-        }));
-      };
-
-      // 新增活動
-      const handleCreateEvent = (newEventData) => {
+      // 📤 新增發起活動並寫入 Google 試算表
+      const handleCreateEvent = async (newEventData) => {
         const newEvent = {
           ...newEventData,
           id: 'evt-' + Date.now(),
           registrations: []
         };
+
+        // 即時更新 UI
         setEvents(prev => [newEvent, ...prev]);
         setShowCreateModal(false);
-        alert('🏕️ 露營活動發起成功！其他露友現在可以進行報名。');
-      };
 
-      // 刪除活動 (僅限測試/主辦人)
-      const handleDeleteEvent = (eventId) => {
-        if (!confirm('確定要刪除這個露營活動嗎？此操作不可復原。')) return;
-        setEvents(prev => prev.filter(e => e.id !== eventId));
-        setSelectedEvent(null);
+        // 背景寫入 Google 試算表
+        try {
+          setSyncStatus('⏳ 正在將新活動寫入 Google 試算表...');
+          await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'create_event',
+              data: newEvent
+            })
+          });
+          setSyncStatus('✅ 活動已成功寫入 Google 試算表！');
+          alert('🏕️ 露營活動發起成功！資料已同步至 Google 雲端試算表。');
+        } catch (err) {
+          console.error("Create event error:", err);
+          alert('⚠️ 活動已在本地建立，但同步雲端發生錯誤。');
+        }
       };
 
       return (
@@ -174,6 +183,13 @@
               </div>
 
               <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+                <button 
+                  onClick={loadEventsFromCloud}
+                  title="手動同步最新資料"
+                  class="bg-emerald-900 hover:bg-emerald-950 text-emerald-100 text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-emerald-700">
+                  <span>🔄</span> 重新整理
+                </button>
+
                 {/* 視圖切換 */}
                 <div class="bg-emerald-900/60 p-1 rounded-lg flex gap-1 text-sm font-medium">
                   <button 
@@ -198,21 +214,23 @@
             </div>
           </header>
 
+          {/* 雲端同步狀態標籤 */}
+          <div class="bg-emerald-900 text-emerald-200 text-xs py-1 px-4 text-center font-medium flex items-center justify-center gap-2">
+            <span>{syncStatus}</span>
+            {loading && <span class="animate-spin">⏳</span>}
+          </div>
+
           {/* 主要內容區 Main Content */}
           <main class="flex-grow max-w-6xl w-full mx-auto px-4 py-6">
-            
-            {/* 如果正在檢視活動詳情 */}
             {selectedEvent ? (
               <EventDetailView 
                 event={selectedEvent} 
                 onBack={() => setSelectedEvent(null)}
                 onOpenRegister={() => setShowRegisterModal(true)}
-                onCancelReg={handleCancelRegistration}
-                onDeleteEvent={handleDeleteEvent}
               />
             ) : (
               <div>
-                {/* 搜尋與篩選 Bar */}
+                {/* 搜尋與統計 Bar */}
                 <div class="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                   <div class="relative w-full sm:w-80">
                     <input 
@@ -230,7 +248,7 @@
                   </div>
                 </div>
 
-                {/* 顯示列表視圖 OR 月曆視圖 */}
+                {/* 列表 / 月曆 視圖 */}
                 {currentView === 'list' ? (
                   <EventListView events={filteredEvents} onSelectEvent={setSelectedEvent} />
                 ) : (
@@ -243,10 +261,10 @@
           {/* 頁尾 Footer */}
           <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 text-center text-xs mt-12">
             <p>🏕️ 露營趣 CampOrder - 專為露營社群設計的免費線上報名平台</p>
-            <p class="mt-1 text-slate-500">支援同步至 Google 試算表 & Vercel / Netlify 一鍵部署</p>
+            <p class="mt-1 text-slate-500">已連結 Google 雲端硬碟試算表實時同步 ☁️</p>
           </footer>
 
-          {/* 報名彈出視窗 Modal */}
+          {/* 報名彈出視窗 */}
           {showRegisterModal && selectedEvent && (
             <RegisterModal 
               event={selectedEvent}
@@ -255,7 +273,7 @@
             />
           )}
 
-          {/* 發起活動彈出視窗 Modal */}
+          {/* 發起活動彈出視窗 */}
           {showCreateModal && (
             <CreateEventModal 
               onClose={() => setShowCreateModal(false)}
@@ -283,8 +301,9 @@
       return (
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {events.map(evt => {
-            const totalBooked = evt.registrations.reduce((sum, r) => sum + Number(r.tents || 1), 0);
-            const remainingTents = evt.maxTents - totalBooked;
+            const regs = evt.registrations || [];
+            const totalBooked = regs.reduce((sum, r) => sum + Number(r.tents || 1), 0);
+            const remainingTents = (evt.maxTents || 0) - totalBooked;
             const isFull = remainingTents <= 0;
 
             return (
@@ -292,7 +311,6 @@
                 key={evt.id} 
                 onClick={() => onSelectEvent(evt)}
                 class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition cursor-pointer border border-slate-200/80 flex flex-col group">
-                {/* 圖片區 */}
                 <div class="relative h-48 overflow-hidden bg-slate-100">
                   <img 
                     src={evt.imageUrl || "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80"} 
@@ -307,7 +325,6 @@
                   </div>
                 </div>
 
-                {/* 內容區 */}
                 <div class="p-5 flex-grow flex flex-col justify-between">
                   <div>
                     <h3 class="font-bold text-slate-800 text-lg group-hover:text-emerald-700 transition line-clamp-1">
@@ -334,9 +351,8 @@
                     </div>
                   </div>
 
-                  {/* 底部動作 */}
                   <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <span class="text-slate-400">報名狀況：{evt.registrations.length} 組成員</span>
+                    <span class="text-slate-400">已報名：{regs.length} 組</span>
                     <span class="text-emerald-700 font-bold group-hover:translate-x-1 transition">查看詳情 & 報名 ➔</span>
                   </div>
                 </div>
@@ -348,7 +364,7 @@
     }
 
     // ----------------------------------------------------
-    // 組件 2：日曆總表視圖 (Calendar View)
+    // 組件 2：日曆總表視圖
     // ----------------------------------------------------
     function CalendarView({ events, onSelectEvent }) {
       const [currentMonth, setCurrentMonth] = useState(new Date(2026, 9, 1)); // 2026年10月
@@ -356,18 +372,9 @@
       const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
       const firstDayOfWeek = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
 
-      const prevMonth = () => {
-        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
-      };
-
-      const nextMonth = () => {
-        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
-      };
-
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1;
 
-      // 日曆格子生成
       const calendarDays = [];
       for (let i = 0; i < firstDayOfWeek; i++) {
         calendarDays.push(null);
@@ -379,19 +386,17 @@
 
       return (
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-          {/* 日曆切換頭 */}
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
               <span>📅</span> {year} 年 {month} 月 露營行事曆
             </h2>
             <div class="flex items-center gap-2">
-              <button onClick={prevMonth} class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">◀ 上個月</button>
+              <button onClick={() => setCurrentMonth(new Date(year, month - 2, 1))} class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">◀ 上個月</button>
               <button onClick={() => setCurrentMonth(new Date())} class="px-3 py-1.5 bg-emerald-100 text-emerald-800 hover:bg-emerald-200 rounded-lg text-sm font-medium">今天</button>
-              <button onClick={nextMonth} class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">下個月 ▶</button>
+              <button onClick={() => setCurrentMonth(new Date(year, month, 1))} class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">下個月 ▶</button>
             </div>
           </div>
 
-          {/* 星期標頭 */}
           <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-500 mb-2">
             <div class="text-rose-500">週日</div>
             <div>週一</div>
@@ -402,28 +407,21 @@
             <div class="text-emerald-600">週六</div>
           </div>
 
-          {/* 日期網格 */}
           <div class="grid grid-cols-7 gap-2">
             {calendarDays.map((cell, idx) => {
-              if (!cell) {
-                return <div key={'empty-' + idx} class="h-28 bg-slate-50/50 rounded-xl"></div>;
-              }
+              if (!cell) return <div key={'empty-' + idx} class="h-28 bg-slate-50/50 rounded-xl"></div>;
 
-              // 找當天涵蓋的活動
-              const dayEvents = events.filter(e => {
-                return cell.dateStr >= e.startDate && cell.dateStr <= e.endDate;
-              });
+              const dayEvents = events.filter(e => cell.dateStr >= e.startDate && cell.dateStr <= e.endDate);
 
               return (
                 <div key={cell.dateStr} class="h-28 bg-slate-50 hover:bg-slate-100/80 p-2 rounded-xl border border-slate-200/60 flex flex-col justify-between overflow-hidden">
                   <div class="text-xs font-bold text-slate-600">{cell.day}</div>
-                  
                   <div class="space-y-1 overflow-y-auto custom-scrollbar flex-grow mt-1">
                     {dayEvents.map(evt => (
                       <div 
                         key={evt.id}
                         onClick={() => onSelectEvent(evt)}
-                        class="bg-emerald-700 text-white text-[11px] p-1.5 rounded-lg cursor-pointer hover:bg-emerald-800 transition truncate shadow-xs font-medium"
+                        class="bg-emerald-700 text-white text-[11px] p-1.5 rounded-lg cursor-pointer hover:bg-emerald-800 transition truncate font-medium"
                         title={evt.title}>
                         ⛺ {evt.title}
                       </div>
@@ -440,11 +438,12 @@
     // ----------------------------------------------------
     // 組件 3：活動詳細視圖 & 已報名名單
     // ----------------------------------------------------
-    function EventDetailView({ event, onBack, onOpenRegister, onCancelReg, onDeleteEvent }) {
-      const totalBookedTents = event.registrations.reduce((sum, r) => sum + Number(r.tents || 1), 0);
-      const totalAdults = event.registrations.reduce((sum, r) => sum + Number(r.adults || 0), 0);
-      const totalKids = event.registrations.reduce((sum, r) => sum + Number(r.kids || 0), 0);
-      const remainingTents = event.maxTents - totalBookedTents;
+    function EventDetailView({ event, onBack, onOpenRegister }) {
+      const regs = event.registrations || [];
+      const totalBookedTents = regs.reduce((sum, r) => sum + Number(r.tents || 1), 0);
+      const totalAdults = regs.reduce((sum, r) => sum + Number(r.adults || 0), 0);
+      const totalKids = regs.reduce((sum, r) => sum + Number(r.kids || 0), 0);
+      const remainingTents = (event.maxTents || 0) - totalBookedTents;
       const isFull = remainingTents <= 0;
 
       return (
@@ -455,7 +454,6 @@
             ⬅ 返回活動列表
           </button>
 
-          {/* 主活動資訊卡片 */}
           <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 grid grid-cols-1 lg:grid-cols-3">
             <div class="lg:col-span-1 h-64 lg:h-auto relative">
               <img 
@@ -467,15 +465,9 @@
             
             <div class="lg:col-span-2 p-6 flex flex-col justify-between space-y-4">
               <div>
-                <div class="flex items-center justify-between gap-2 flex-wrap mb-2">
-                  <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">
-                    📍 {event.location}
-                  </span>
-                  <button onClick={() => onDeleteEvent(event.id)} class="text-xs text-rose-500 hover:underline">
-                    🗑️ 刪除此活動
-                  </button>
-                </div>
-
+                <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full inline-block mb-2">
+                  📍 {event.location}
+                </span>
                 <h2 class="text-2xl font-bold text-slate-800">{event.title}</h2>
                 <p class="text-slate-600 text-sm mt-3 leading-relaxed whitespace-pre-line">{event.description}</p>
               </div>
@@ -495,18 +487,16 @@
                 </div>
                 <div>
                   <span class="text-slate-400 block">👤 主辦人</span>
-                  <span class="font-bold text-slate-800 mt-0.5 block">{event.organizer} ({event.organizerPhone})</span>
+                  <span class="font-bold text-slate-800 mt-0.5 block">{event.organizer} ({event.organizerPhone || '-'})</span>
                 </div>
               </div>
 
-              {/* 匯款資訊區 */}
               {event.paymentInfo && (
                 <div class="bg-amber-50 border border-amber-200/80 p-3 rounded-xl text-xs text-amber-900">
                   <span class="font-bold">💳 訂金/匯款資訊：</span> {event.paymentInfo}
                 </div>
               )}
 
-              {/* 報名按鈕 */}
               <div class="flex items-center justify-between pt-2">
                 <div class="text-xs text-slate-500">
                   目前統計：已報名 <b class="text-slate-800">{totalBookedTents}</b> 帳 / <b class="text-slate-800">{totalAdults}</b> 大 <b class="text-slate-800">{totalKids}</b> 小
@@ -526,13 +516,12 @@
             </div>
           </div>
 
-          {/* 報名名單表格 */}
           <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
             <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <span>📋</span> 已報名露友明細 ({event.registrations.length} 組)
+              <span>📋</span> 已報名露友明細 ({regs.length} 組)
             </h3>
 
-            {event.registrations.length === 0 ? (
+            {regs.length === 0 ? (
               <p class="text-slate-400 text-sm py-8 text-center">尚無露友報名，成為第一個報名的人吧！</p>
             ) : (
               <div class="overflow-x-auto">
@@ -546,11 +535,10 @@
                       <th class="p-3">車號</th>
                       <th class="p-3 text-center">夜衝</th>
                       <th class="p-3">備註 / 需求</th>
-                      <th class="p-3 text-right">操作</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100">
-                    {event.registrations.map((reg) => (
+                    {regs.map((reg) => (
                       <tr key={reg.id} class="hover:bg-slate-50/80">
                         <td class="p-3 font-bold text-slate-800">{reg.name}</td>
                         <td class="p-3 text-slate-500">{reg.phone}</td>
@@ -561,13 +549,6 @@
                           {reg.nightArrive ? <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs">🌙 是</span> : <span class="text-slate-400 text-xs">否</span>}
                         </td>
                         <td class="p-3 text-xs text-slate-500 max-w-xs truncate">{reg.note || '-'}</td>
-                        <td class="p-3 text-right">
-                          <button 
-                            onClick={() => onCancelReg(event.id, reg.id)}
-                            class="text-xs text-rose-500 hover:text-rose-700 hover:underline">
-                            取消報名
-                          </button>
-                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -580,7 +561,7 @@
     }
 
     // ----------------------------------------------------
-    // 彈出視窗 1：露友填表報名 Modal
+    // 彈出視窗：露友填表報名 Modal
     // ----------------------------------------------------
     function RegisterModal({ event, onClose, onSubmit }) {
       const [formData, setFormData] = useState({
@@ -719,7 +700,7 @@
     }
 
     // ----------------------------------------------------
-    // 彈出視窗 2：發起露營活動 Modal
+    // 彈出視窗：發起露營活動 Modal
     // ----------------------------------------------------
     function CreateEventModal({ onClose, onSubmit }) {
       const [formData, setFormData] = useState({

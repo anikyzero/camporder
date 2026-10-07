@@ -51,8 +51,8 @@
       // Modals
       const [showRegisterModal, setShowRegisterModal] = useState(false);
       const [showCreateModal, setShowCreateModal] = useState(false);
-      const [editingEvent, setEditingEvent] = useState(null); // 正在編輯的活動
-      const [editingRegister, setEditingRegister] = useState(null); // 正在編輯的報名紀錄
+      const [editingEvent, setEditingEvent] = useState(null);
+      const [editingRegister, setEditingRegister] = useState(null);
 
       const [searchTerm, setSearchTerm] = useState('');
 
@@ -101,7 +101,6 @@
       useEffect(() => {
         loadEventsFromSupabase();
 
-        // 開啟 Supabase Realtime 訂閱
         const subscription = supabase
           .channel('schema-db-changes')
           .on('postgres_changes', { event: '*', schema: 'public' }, () => {
@@ -302,42 +301,51 @@
           {/* 頂部導覽列 Header */}
           <header class="bg-emerald-800 text-white shadow-md sticky top-0 z-30">
             <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div class="flex items-center gap-3 cursor-pointer" onClick={() => { setSelectedEvent(null); loadEventsFromSupabase(); }}>
-                <span class="text-3xl">🏕️</span>
-                <div>
-                  <h1 class="text-xl font-bold tracking-wide flex items-center gap-2">
-                    露營趣 CampOrder <span class="text-xs bg-amber-400 text-slate-900 px-2 py-0.5 rounded font-bold">Supabase ⚡ 極速版</span>
-                  </h1>
-                  <p class="text-xs text-emerald-200">露營群組活動發起與自主報名系統</p>
+              <div class="flex items-center gap-3 cursor-pointer w-full sm:w-auto justify-between sm:justify-start" onClick={() => { setSelectedEvent(null); loadEventsFromSupabase(); }}>
+                <div class="flex items-center gap-2">
+                  <span class="text-3xl">🏕️</span>
+                  <div>
+                    <h1 class="text-lg sm:text-xl font-bold tracking-wide flex items-center gap-1.5">
+                      露營趣 <span class="text-[10px] bg-amber-400 text-slate-900 px-1.5 py-0.5 rounded font-bold">極速版</span>
+                    </h1>
+                    <p class="text-[11px] text-emerald-200">露營群組活動與報名系統</p>
+                  </div>
                 </div>
+
+                {/* 手機版快速發起按鈕 */}
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setShowCreateModal(true); }}
+                  class="sm:hidden bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-3 py-1.5 rounded-lg shadow text-xs flex items-center gap-1">
+                  <span>➕</span> 發起團露
+                </button>
               </div>
 
-              <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                 <button 
                   onClick={loadEventsFromSupabase}
                   title="手動刷新資料"
-                  class="bg-emerald-900 hover:bg-emerald-950 text-emerald-100 text-xs px-3 py-2 rounded-lg flex items-center gap-1 border border-emerald-700 font-medium">
+                  class="bg-emerald-900 hover:bg-emerald-950 text-emerald-100 text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-emerald-700 font-medium">
                   <span>🔄</span> 重新整理
                 </button>
 
                 {/* 視圖切換 */}
-                <div class="bg-emerald-900/60 p-1 rounded-lg flex gap-1 text-sm font-medium">
+                <div class="bg-emerald-900/60 p-1 rounded-lg flex gap-1 text-xs font-medium">
                   <button 
                     onClick={() => { setCurrentView('list'); setSelectedEvent(null); }}
-                    class={`px-3 py-1.5 rounded-md transition ${currentView === 'list' ? 'bg-white text-emerald-900 shadow' : 'text-emerald-100 hover:text-white'}`}>
-                    📋 活動列表
+                    class={`px-2.5 py-1.5 rounded-md transition ${currentView === 'list' ? 'bg-white text-emerald-900 shadow font-bold' : 'text-emerald-100 hover:text-white'}`}>
+                    📋 列表
                   </button>
                   <button 
                     onClick={() => { setCurrentView('calendar'); setSelectedEvent(null); }}
-                    class={`px-3 py-1.5 rounded-md transition ${currentView === 'calendar' ? 'bg-white text-emerald-900 shadow' : 'text-emerald-100 hover:text-white'}`}>
-                    📅 日期總表
+                    class={`px-2.5 py-1.5 rounded-md transition ${currentView === 'calendar' ? 'bg-white text-emerald-900 shadow font-bold' : 'text-emerald-100 hover:text-white'}`}>
+                    📅 日曆
                   </button>
                 </div>
 
-                {/* 發起活動按鈕 */}
+                {/* 電腦版發起按鈕 */}
                 <button 
                   onClick={() => setShowCreateModal(true)}
-                  class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-1.5 rounded-lg shadow transition flex items-center gap-1.5 text-sm">
+                  class="hidden sm:flex bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold px-4 py-1.5 rounded-lg shadow transition items-center gap-1.5 text-sm">
                   <span>➕</span> 發起團露
                 </button>
               </div>
@@ -377,7 +385,7 @@
                     <span class="absolute left-3 top-2.5 text-slate-400">🔍</span>
                   </div>
 
-                  <div class="text-sm text-slate-600 font-medium self-end sm:self-center">
+                  <div class="text-xs sm:text-sm text-slate-600 font-medium self-end sm:self-center">
                     目前共有 <span class="text-emerald-700 font-bold text-base">{filteredEvents.length}</span> 個活動
                   </div>
                 </div>
@@ -547,43 +555,43 @@
       }
 
       return (
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+        <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 overflow-hidden">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+            <h2 class="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
               <span>📅</span> {year} 年 {month} 月 露營行事曆
             </h2>
-            <div class="flex items-center gap-2">
-              <button onClick={() => setCurrentMonth(new Date(year, month - 2, 1))} class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">◀ 上個月</button>
-              <button onClick={() => setCurrentMonth(new Date())} class="px-3 py-1.5 bg-emerald-100 text-emerald-800 hover:bg-emerald-200 rounded-lg text-sm font-medium">今天</button>
-              <button onClick={() => setCurrentMonth(new Date(year, month, 1))} class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">下個月 ▶</button>
+            <div class="flex items-center gap-2 justify-between">
+              <button onClick={() => setCurrentMonth(new Date(year, month - 2, 1))} class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium">◀ 上個月</button>
+              <button onClick={() => setCurrentMonth(new Date())} class="px-2.5 py-1.5 bg-emerald-100 text-emerald-800 hover:bg-emerald-200 rounded-lg text-xs font-medium">今天</button>
+              <button onClick={() => setCurrentMonth(new Date(year, month, 1))} class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium">下個月 ▶</button>
             </div>
           </div>
 
-          <div class="grid grid-cols-7 gap-2 text-center text-xs font-bold text-slate-500 mb-2">
-            <div class="text-rose-500">週日</div>
-            <div>週一</div>
-            <div>週二</div>
-            <div>週三</div>
-            <div>週四</div>
-            <div>週五</div>
-            <div class="text-emerald-600">週六</div>
+          <div class="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs font-bold text-slate-500 mb-2">
+            <div class="text-rose-500">日</div>
+            <div>一</div>
+            <div>二</div>
+            <div>三</div>
+            <div>四</div>
+            <div>五</div>
+            <div class="text-emerald-600">六</div>
           </div>
 
-          <div class="grid grid-cols-7 gap-2">
+          <div class="grid grid-cols-7 gap-1 sm:gap-2">
             {calendarDays.map((cell, idx) => {
-              if (!cell) return <div key={'empty-' + idx} class="h-28 bg-slate-50/50 rounded-xl"></div>;
+              if (!cell) return <div key={'empty-' + idx} class="h-20 sm:h-28 bg-slate-50/50 rounded-lg sm:rounded-xl"></div>;
 
               const dayEvents = events.filter(e => cell.dateStr >= e.startDate && cell.dateStr <= e.endDate);
 
               return (
-                <div key={cell.dateStr} class="h-28 bg-slate-50 hover:bg-slate-100/80 p-2 rounded-xl border border-slate-200/60 flex flex-col justify-between overflow-hidden">
-                  <div class="text-xs font-bold text-slate-600">{cell.day}</div>
-                  <div class="space-y-1 overflow-y-auto custom-scrollbar flex-grow mt-1">
+                <div key={cell.dateStr} class="h-20 sm:h-28 bg-slate-50 hover:bg-slate-100/80 p-1 sm:p-2 rounded-lg sm:rounded-xl border border-slate-200/60 flex flex-col justify-between overflow-hidden">
+                  <div class="text-[11px] sm:text-xs font-bold text-slate-600">{cell.day}</div>
+                  <div class="space-y-1 overflow-y-auto custom-scrollbar flex-grow mt-0.5 sm:mt-1">
                     {dayEvents.map(evt => (
                       <div 
                         key={evt.id}
                         onClick={() => onSelectEvent(evt)}
-                        class="bg-emerald-700 text-white text-[11px] p-1.5 rounded-lg cursor-pointer hover:bg-emerald-800 transition truncate font-medium"
+                        class="bg-emerald-700 text-white text-[10px] sm:text-[11px] p-1 rounded sm:rounded-lg cursor-pointer hover:bg-emerald-800 transition truncate font-medium"
                         title={evt.title}>
                         ⛺ {evt.title}
                       </div>
@@ -598,7 +606,7 @@
     }
 
     // ----------------------------------------------------
-    // 組件 3：活動詳細視圖 & 已報名名單
+    // 組件 3：活動詳細視圖 & 手機響應式卡片式報名明細
     // ----------------------------------------------------
     function EventDetailView({ event, onBack, onOpenRegister, onCancelReg, onDeleteEvent, onEditEvent, onEditReg }) {
       const regs = event.registrations || [];
@@ -613,27 +621,28 @@
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <button 
               onClick={onBack}
-              class="inline-flex items-center gap-1 text-sm font-medium text-emerald-800 hover:text-emerald-900 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
-              ⬅ 返回活動列表
+              class="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-emerald-800 hover:text-emerald-900 bg-white px-3 sm:px-4 py-2 rounded-xl shadow-sm border border-slate-200">
+              ⬅ 返回列表
             </button>
 
             <div class="flex items-center gap-2">
               <button 
                 onClick={() => onEditEvent(event)}
-                class="inline-flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-3.5 py-2 rounded-xl border border-amber-200 transition">
-                ✏️ 編輯活動資訊
+                class="inline-flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-3 py-2 rounded-xl border border-amber-200 transition">
+                ✏️ 編輯活動
               </button>
 
               <button 
                 onClick={() => onDeleteEvent(event.id)}
-                class="inline-flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3.5 py-2 rounded-xl border border-rose-200 transition">
+                class="inline-flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3 py-2 rounded-xl border border-rose-200 transition">
                 🗑️ 刪除活動
               </button>
             </div>
           </div>
 
+          {/* 主活動卡片 */}
           <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 grid grid-cols-1 lg:grid-cols-3">
-            <div class="lg:col-span-1 h-64 lg:h-auto relative">
+            <div class="lg:col-span-1 h-52 sm:h-64 lg:h-auto relative">
               <img 
                 src={event.imageUrl || "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80"} 
                 alt={event.title} 
@@ -641,16 +650,16 @@
               />
             </div>
             
-            <div class="lg:col-span-2 p-6 flex flex-col justify-between space-y-4">
+            <div class="lg:col-span-2 p-4 sm:p-6 flex flex-col justify-between space-y-4">
               <div>
                 <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full inline-block mb-2">
                   📍 {event.location}
                 </span>
-                <h2 class="text-2xl font-bold text-slate-800">{event.title}</h2>
-                <p class="text-slate-600 text-sm mt-3 leading-relaxed whitespace-pre-line">{event.description}</p>
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-800">{event.title}</h2>
+                <p class="text-slate-600 text-xs sm:text-sm mt-2 sm:mt-3 leading-relaxed whitespace-pre-line">{event.description}</p>
               </div>
 
-              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl text-xs">
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 bg-slate-50 p-3 sm:p-4 rounded-xl text-xs">
                 <div>
                   <span class="text-slate-400 block">📅 活動日期</span>
                   <span class="font-bold text-slate-800 mt-0.5 block">{event.startDate} ~ {event.endDate}</span>
@@ -675,7 +684,7 @@
                 </div>
               )}
 
-              <div class="flex items-center justify-between pt-2">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
                 <div class="text-xs text-slate-500">
                   目前統計：已報名 <b class="text-slate-800">{totalBookedTents}</b> 帳 / <b class="text-slate-800">{totalAdults}</b> 大 <b class="text-slate-800">{totalKids}</b> 小
                 </div>
@@ -683,7 +692,7 @@
                 <button 
                   disabled={isFull}
                   onClick={onOpenRegister}
-                  class={`px-6 py-2.5 rounded-xl font-bold text-sm shadow transition ${
+                  class={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-sm shadow transition ${
                     isFull 
                       ? 'bg-slate-300 text-slate-500 cursor-not-allowed' 
                       : 'bg-emerald-700 hover:bg-emerald-800 text-white'
@@ -694,56 +703,117 @@
             </div>
           </div>
 
-          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <span>📋</span> 已報名露友明細 ({regs.length} 組)
+          {/* 報名名單區塊 (響應式設計：手機為獨立卡片，電腦為表格) */}
+          <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200">
+            <h3 class="text-base sm:text-lg font-bold text-slate-800 mb-4 flex items-center justify-between">
+              <span class="flex items-center gap-2">📋 已報名露友明細 ({regs.length} 組)</span>
+              <span class="text-xs text-slate-400 font-normal">手機直向閱讀免滑動</span>
             </h3>
 
             {regs.length === 0 ? (
               <p class="text-slate-400 text-sm py-8 text-center">尚無露友報名，成為第一個報名的人吧！</p>
             ) : (
-              <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-slate-600">
-                  <thead class="bg-slate-50 text-xs text-slate-500 uppercase font-semibold">
-                    <tr>
-                      <th class="p-3">露友暱稱</th>
-                      <th class="p-3">電話</th>
-                      <th class="p-3 text-center">報名帳數</th>
-                      <th class="p-3 text-center">人數 (大/小)</th>
-                      <th class="p-3">車號</th>
-                      <th class="p-3 text-center">夜衝</th>
-                      <th class="p-3">備註 / 需求</th>
-                      <th class="p-3 text-right">操作</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-100">
-                    {regs.map((reg) => (
-                      <tr key={reg.id} class="hover:bg-slate-50/80">
-                        <td class="p-3 font-bold text-slate-800">{reg.name}</td>
-                        <td class="p-3 text-slate-500">{reg.phone}</td>
-                        <td class="p-3 text-center font-semibold text-emerald-700">{reg.tents || 1} 帳</td>
-                        <td class="p-3 text-center">{reg.adults} 大 {reg.kids} 小</td>
-                        <td class="p-3 font-mono text-xs text-slate-600">{reg.carNo || '-'}</td>
-                        <td class="p-3 text-center">
-                          {reg.nightArrive ? <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs">🌙 是</span> : <span class="text-slate-400 text-xs">否</span>}
-                        </td>
-                        <td class="p-3 text-xs text-slate-500 max-w-xs truncate">{reg.note || '-'}</td>
-                        <td class="p-3 text-right space-x-1">
-                          <button 
-                            onClick={() => onEditReg(reg)}
-                            class="text-xs font-semibold text-amber-700 hover:bg-amber-50 px-2 py-1 rounded transition">
-                            ✏️ 編輯
-                          </button>
-                          <button 
-                            onClick={() => onCancelReg(event.id, reg.id)}
-                            class="text-xs font-semibold text-rose-500 hover:bg-rose-50 px-2 py-1 rounded transition">
-                            🗑️ 取消
-                          </button>
-                        </td>
+              <div>
+                {/* 📱 1. 手機版佈局：獨立精美卡片清單 (僅在小螢幕顯示 md:hidden) */}
+                <div class="md:hidden space-y-3">
+                  {regs.map((reg) => (
+                    <div key={reg.id} class="bg-slate-50/90 rounded-xl p-4 border border-slate-200 space-y-3">
+                      {/* 卡片頂部 */}
+                      <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <div class="flex items-center gap-2">
+                          <span class="font-bold text-slate-800 text-base">{reg.name}</span>
+                          {reg.nightArrive && (
+                            <span class="bg-purple-100 text-purple-700 text-[10px] font-semibold px-2 py-0.5 rounded">
+                              🌙 夜衝
+                            </span>
+                          )}
+                        </div>
+                        <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full">
+                          ⛺ {reg.tents || 1} 帳
+                        </span>
+                      </div>
+
+                      {/* 卡片內容 */}
+                      <div class="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                        <div>
+                          <span class="text-slate-400">📞 電話：</span>
+                          <span class="font-medium text-slate-700">{reg.phone}</span>
+                        </div>
+                        <div>
+                          <span class="text-slate-400">👥 人數：</span>
+                          <span class="font-medium text-slate-700">{reg.adults}大 {reg.kids}小</span>
+                        </div>
+                        <div>
+                          <span class="text-slate-400">🚗 車號：</span>
+                          <span class="font-mono text-slate-700">{reg.carNo || '-'}</span>
+                        </div>
+                        <div class="col-span-2">
+                          <span class="text-slate-400">💬 備註：</span>
+                          <span class="text-slate-700">{reg.note || '無'}</span>
+                        </div>
+                      </div>
+
+                      {/* 卡片底部操作按鈕 (全寬極好按) */}
+                      <div class="pt-2 border-t border-slate-200/80 flex items-center justify-end gap-2">
+                        <button 
+                          onClick={() => onEditReg(reg)}
+                          class="flex-1 py-1.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg text-xs font-bold text-center">
+                          ✏️ 編輯
+                        </button>
+                        <button 
+                          onClick={() => onCancelReg(event.id, reg.id)}
+                          class="flex-1 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-xs font-bold text-center">
+                          🗑️ 取消報名
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 💻 2. 電腦版佈局：傳統完整表格 (在平板與電腦顯示 hidden md:block) */}
+                <div class="hidden md:block overflow-x-auto">
+                  <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="bg-slate-50 text-xs text-slate-500 uppercase font-semibold">
+                      <tr>
+                        <th class="p-3">露友暱稱</th>
+                        <th class="p-3">電話</th>
+                        <th class="p-3 text-center">報名帳數</th>
+                        <th class="p-3 text-center">人數 (大/小)</th>
+                        <th class="p-3">車號</th>
+                        <th class="p-3 text-center">夜衝</th>
+                        <th class="p-3">備註 / 需求</th>
+                        <th class="p-3 text-right">操作</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      {regs.map((reg) => (
+                        <tr key={reg.id} class="hover:bg-slate-50/80">
+                          <td class="p-3 font-bold text-slate-800">{reg.name}</td>
+                          <td class="p-3 text-slate-500">{reg.phone}</td>
+                          <td class="p-3 text-center font-semibold text-emerald-700">{reg.tents || 1} 帳</td>
+                          <td class="p-3 text-center">{reg.adults} 大 {reg.kids} 小</td>
+                          <td class="p-3 font-mono text-xs text-slate-600">{reg.carNo || '-'}</td>
+                          <td class="p-3 text-center">
+                            {reg.nightArrive ? <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs">🌙 是</span> : <span class="text-slate-400 text-xs">否</span>}
+                          </td>
+                          <td class="p-3 text-xs text-slate-500 max-w-xs truncate">{reg.note || '-'}</td>
+                          <td class="p-3 text-right space-x-1">
+                            <button 
+                              onClick={() => onEditReg(reg)}
+                              class="text-xs font-semibold text-amber-700 hover:bg-amber-50 px-2 py-1 rounded transition">
+                              ✏️ 編輯
+                            </button>
+                            <button 
+                              onClick={() => onCancelReg(event.id, reg.id)}
+                              class="text-xs font-semibold text-rose-500 hover:bg-rose-50 px-2 py-1 rounded transition">
+                              🗑️ 取消
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
@@ -777,12 +847,12 @@
 
       return (
         <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border border-slate-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
+          <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl border border-slate-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div class="flex items-center justify-between border-b pb-3">
-              <h3 class="text-lg font-bold text-slate-800">
+              <h3 class="text-base sm:text-lg font-bold text-slate-800">
                 {initialData ? '✏️ 修改報名資料' : '✍️ 報名露營活動'}
               </h3>
-              <button onClick={onClose} class="text-slate-400 hover:text-slate-600">✕</button>
+              <button onClick={onClose} class="text-slate-400 hover:text-slate-600 p-1">✕</button>
             </div>
 
             <p class="text-xs text-emerald-800 bg-emerald-50 p-2.5 rounded-lg mt-3 font-medium">
@@ -922,10 +992,10 @@
 
       return (
         <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl border border-slate-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
+          <div class="bg-white rounded-2xl max-w-xl w-full p-5 sm:p-6 shadow-xl border border-slate-100 max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div class="flex items-center justify-between border-b pb-3">
-              <h3 class="text-lg font-bold text-slate-800">{title}</h3>
-              <button onClick={onClose} class="text-slate-400 hover:text-slate-600">✕</button>
+              <h3 class="text-base sm:text-lg font-bold text-slate-800">{title}</h3>
+              <button onClick={onClose} class="text-slate-400 hover:text-slate-600 p-1">✕</button>
             </div>
 
             <form onSubmit={handleSubmit} class="mt-4 space-y-4 text-sm">

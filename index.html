@@ -357,7 +357,6 @@
                     <h1 class="text-xl font-bold tracking-wide text-[#FFFDF8] flex items-center gap-2">
                       假日逃離計畫
                     </h1>
-                    {/* 更新副標題 */}
                     <p class="text-xs text-[#E1E8DD] font-light">今晚睡哪裡？先報名再說</p>
                   </div>
                 </div>
@@ -497,7 +496,8 @@
     }
 
     // ----------------------------------------------------
-    // 組件 1：活動卡片列表視圖
+    // 組件 1：活動卡片列表視圖 (完全依照指定順序調整)
+    // 上面日期加上標題；下面標題順序：地點 > 報名截止 > 發起人 > 目前夥伴
     // ----------------------------------------------------
     function EventListView({ events, onSelectEvent }) {
       if (events.length === 0) {
@@ -517,69 +517,69 @@
             const totalPeople = regs.reduce((sum, r) => sum + Number(r.adults || 0) + Number(r.kids || 0), 0);
             const totalTents = regs.reduce((sum, r) => sum + Number(r.tents || 1), 0);
 
-            const formatDateStr = (dStr) => {
-              if (!dStr) return '';
-              const parts = dStr.split('-');
-              if (parts.length === 3) return `${parts[1]} / ${parts[2]}`;
-              return dStr;
-            };
-
             const isExpired = evt.deadlineDate && new Date().toISOString().split('T')[0] > evt.deadlineDate;
 
             return (
               <div 
                 key={evt.id} 
                 onClick={() => onSelectEvent(evt)}
-                class="card-outdoor p-5 flex flex-col justify-between cursor-pointer group">
+                class="card-outdoor p-5 flex flex-col justify-between cursor-pointer group space-y-4">
                 
                 <div>
-                  <div class="flex items-center justify-between mb-3 text-xs">
-                    <span class="font-bold text-[#B8794A] tracking-wide">
-                      {formatDateStr(evt.startDate)} – {formatDateStr(evt.endDate)}
-                    </span>
+                  {/* 1. 上面的日期 (加上「📅 活動日期：」標題) 與 狀態標籤 */}
+                  <div class="flex items-center justify-between mb-3 text-xs border-b border-[#DDD8CB]/60 pb-2.5">
+                    <div class="flex items-center gap-1 font-bold text-[#B8794A]">
+                      <span>📅 活動日期：</span>
+                      <span>{evt.startDate} ～ {evt.endDate}</span>
+                    </div>
 
                     {isExpired ? (
-                      <span class="bg-[#E5E1D9] text-[#77736A] px-2.5 py-0.5 rounded-full text-[11px] font-medium">
+                      <span class="bg-[#E5E1D9] text-[#77736A] px-2.5 py-0.5 rounded-full text-[11px] font-medium shrink-0">
                         已截止
                       </span>
                     ) : (
-                      <span class="bg-[#E1E8DD] text-[#52664F] px-2.5 py-0.5 rounded-full text-[11px] font-bold">
+                      <span class="bg-[#E1E8DD] text-[#52664F] px-2.5 py-0.5 rounded-full text-[11px] font-bold shrink-0">
                         尚有名額
                       </span>
                     )}
                   </div>
 
-                  <h3 class="font-bold text-[#30332F] text-lg group-hover:text-[#3F5144] transition line-clamp-1 mb-2">
+                  {/* 2. 中間活動大標題 */}
+                  <h3 class="font-bold text-[#30332F] text-lg group-hover:text-[#3F5144] transition line-clamp-1 mb-3">
                     {evt.title}
                   </h3>
 
-                  <div class="space-y-1.5 text-xs text-[#737970] mt-3">
-                    <div class="flex items-center gap-1.5">
-                      <span>📍 地點：</span>
-                      <span class="font-medium text-[#30332F]">{evt.location}</span>
+                  {/* 3. 下方內文屬性 (依指定順序：地點 > 報名截止 > 發起人 > 目前夥伴) */}
+                  <div class="space-y-2 text-xs text-[#737970]">
+                    {/* (1) 地點 */}
+                    <div class="flex items-center justify-between bg-[#F5F1E8] px-3 py-1.5 rounded-lg border border-[#DDD8CB]/50">
+                      <span class="text-[#737970]">📍 逃離地點</span>
+                      <span class="font-bold text-[#30332F]">{evt.location}</span>
                     </div>
 
-                    <div class="flex items-center gap-1.5">
-                      <span>🏕️ 目前夥伴：</span>
-                      <span class="font-medium text-[#30332F]">{regs.length} 組報名 ({totalTents} 帳 / {totalPeople} 人)</span>
+                    {/* (2) 報名截止 */}
+                    <div class="flex items-center justify-between bg-[#F5F1E8] px-3 py-1.5 rounded-lg border border-[#DDD8CB]/50">
+                      <span class="text-[#737970]">⏳ 報名截止</span>
+                      <span class="font-bold text-[#B8794A]">{evt.deadlineDate || '無期限'}</span>
                     </div>
 
-                    {evt.deadlineDate && (
-                      <div class="flex items-center gap-1.5">
-                        <span>⏳ 報名截止：</span>
-                        <span class="font-medium text-[#B8794A]">{evt.deadlineDate}</span>
-                      </div>
-                    )}
+                    {/* (3) 發起人 */}
+                    <div class="flex items-center justify-between bg-[#F5F1E8] px-3 py-1.5 rounded-lg border border-[#DDD8CB]/50">
+                      <span class="text-[#737970]">👤 發起人</span>
+                      <span class="font-bold text-[#30332F]">{evt.organizer}</span>
+                    </div>
 
-                    <div class="flex items-center gap-1.5">
-                      <span>👤 發起人：</span>
-                      <span class="font-medium text-[#30332F]">{evt.organizer}</span>
+                    {/* (4) 目前夥伴 */}
+                    <div class="flex items-center justify-between bg-[#F5F1E8] px-3 py-1.5 rounded-lg border border-[#DDD8CB]/50">
+                      <span class="text-[#737970]">🏕️ 目前夥伴</span>
+                      <span class="font-bold text-[#3F5144]">{regs.length} 組 ({totalTents} 帳 / {totalPeople} 人)</span>
                     </div>
                   </div>
                 </div>
 
-                <div class="mt-6 pt-3 border-t border-[#DDD8CB] flex items-center justify-between">
-                  <span class="text-xs text-[#737970]">看詳細內容</span>
+                {/* 底部按鈕 焦糖棕特調 CTA */}
+                <div class="pt-3 border-t border-[#DDD8CB] flex items-center justify-between">
+                  <span class="text-xs text-[#737970]">詳細資訊 ➔</span>
                   <button class="bg-[#B8794A] hover:bg-[#9F633D] active:bg-[#8A5331] text-[#FFFDF8] font-bold text-xs px-3.5 py-1.5 btn-rounded shadow-xs transition">
                     ［加入這場逃離］
                   </button>
@@ -592,7 +592,7 @@
     }
 
     // ----------------------------------------------------
-    // 組件 2：手機/電腦響應式「逃離月曆」 (清晰清爽自適應)
+    // 組件 2：月曆視圖
     // ----------------------------------------------------
     function CalendarView({ events, onSelectEvent }) {
       const today = new Date();
@@ -636,7 +636,6 @@
             <div class="text-[#3F5144]">六</div>
           </div>
 
-          {/* 月曆格子 (針對手機優化高度與邊距) */}
           <div class="grid grid-cols-7 gap-1 sm:gap-2">
             {calendarDays.map((cell, idx) => {
               if (!cell) return <div key={'empty-' + idx} class="h-16 sm:h-28 bg-[#F5F1E8]/40 rounded-lg sm:rounded-xl"></div>;
@@ -978,7 +977,7 @@
     }
 
     // ----------------------------------------------------
-    // Modal 2：發起 & 編輯逃離計畫 Modal (優化手機日期排版)
+    // Modal 2：發起 & 編輯逃離計畫 Modal
     // ----------------------------------------------------
     function EventFormModal({ title, initialData, onClose, onSubmit }) {
       const [formData, setFormData] = useState({
@@ -1046,7 +1045,6 @@
                 </div>
               </div>
 
-              {/* 📅 優化手機日期排版：小螢幕 (grid-cols-1) 寬敞不擠壓，平版電腦才併排 (sm:grid-cols-3) */}
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label class="block font-medium text-[#30332F] mb-1">開始日期 *</label>

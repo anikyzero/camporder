@@ -38,7 +38,6 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbwihVgkaIm-crh8uPcxQORK87NR1IuEvLG3dOwzmK1QMkgeXg6uuTi8paw5J9WmgoH8ag/exec";
 
     function App() {
-      // 移除硬編碼預設活動，預設完全為空陣列，由雲端即時載入
       const [events, setEvents] = useState([]);
       const [loading, setLoading] = useState(true);
       const [syncStatus, setSyncStatus] = useState('☁️ 正在連線 Google 雲端...');
@@ -48,24 +47,28 @@
       const [showCreateModal, setShowCreateModal] = useState(false);
       const [searchTerm, setSearchTerm] = useState('');
 
-      // 📥 從 Google 試算表讀取雲端最新資料 (防手機瀏覽器快取)
+      // 📥 從 Google 試算表讀取雲端最新資料
       const loadEventsFromCloud = async () => {
         setLoading(true);
         setSyncStatus('🔄 正在同步最新數據...');
         try {
-          // 加入時間戳記避免手機瀏覽器快取 (No-Cache)
           const nocacheUrl = `${API_URL}?_t=${Date.now()}`;
           const res = await fetch(nocacheUrl, { cache: 'no-store' });
           const result = await res.json();
           if (result.status === 'success' && Array.isArray(result.data)) {
             setEvents(result.data);
+            // 如果當前有選中的活動，同步更新其資料
+            if (selectedEvent) {
+              const updatedSel = result.data.find(e => String(e.id) === String(selectedEvent.id));
+              setSelectedEvent(updatedSel || null);
+            }
             setSyncStatus('✅ 已成功與 Google 試算表同步');
           } else {
             setSyncStatus('☁️ 雲端已連線 (目前無活動)');
           }
         } catch (err) {
           console.error("Cloud fetch error:", err);
-          setSyncStatus('⚠️ 雲端連線失敗，請點擊上方重新整理');
+          setSyncStatus('⚠️ 雲端連線失敗，請點擊重新整理');
         } finally {
           setLoading(false);
         }
@@ -84,11 +87,11 @@
         );
       }, [events, searchTerm]);
 
-      // 📤 新增報名並發送給 Google Apps Script API
+      // 📤 新增報名
       const handleRegisterSubmit = async (eventId, regData) => {
         const newReg = { ...regData, id: 'reg-' + Date.now(), eventId };
         
-        // 即時 UI 畫面渲染
+        // 即時 UI 渲染
         setEvents(prev => prev.map(evt => {
           if (String(evt.id) === String(eventId)) {
             const updatedRegs = [...(evt.registrations || []), newReg];
@@ -102,27 +105,54 @@
         }));
         setShowRegisterModal(false);
 
-        // 背景寫入 Google 試算表
         try {
           setSyncStatus('⏳ 正在同步寫入雲端...');
           await fetch(API_URL, {
             method: 'POST',
-            body: JSON.stringify({
-              action: 'register',
-              data: newReg
-            })
+            body: JSON.stringify({ action: 'register', data: newReg })
           });
           setSyncStatus('✅ 報名成功！資料已同步至雲端');
-          alert('🎉 報名成功！資料已同步儲存至 Google 試算表，其他露友現在也看得見囉！');
-          // 重新整理雲端最新數據
+          alert('🎉 報名成功！資料已同步儲存至 Google 試算表！');
           loadEventsFromCloud();
         } catch (err) {
           console.error("Register submit error:", err);
-          alert('⚠️ 報名已在畫面生效，但寫入雲端時發生小錯誤。');
+          alert('⚠️ 報名已在畫面生效，但同步雲端發生錯誤。');
         }
       };
 
-      // 📤 新增發起活動並寫入 Google 試算表
+      // 🗑️ 取消 / 刪除報名
+      const handleCancelRegistration = async (eventId, regId) => {
+        if (!confirm('確定要取消/刪除這筆報名紀錄嗎？此動作將同步從 Google 試算表刪除。')) return;
+
+        // 即時扣除 UI
+        setEvents(prev => prev.map(evt => {
+          if (String(evt.id) === String(eventId)) {
+            const updatedRegs = (evt.registrations || []).filter(r => String(r.id) !== String(regId));
+            const updatedEvt = { ...evt, registrations: updatedRegs };
+            if (selectedEvent && String(selectedEvent.id) === String(eventId)) {
+              setSelectedEvent(updatedEvt);
+            }
+            return updatedEvt;
+          }
+          return evt;
+        }));
+
+        try {
+          setSyncStatus('⏳ 正在從 Google 試算表刪除報名...');
+          await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'delete_registration', id: regId })
+          });
+          setSyncStatus('✅ 報名已成功從雲端刪除');
+          alert('🗑️ 報名已成功刪除！');
+          loadEventsFromCloud();
+        } catch (err) {
+          console.error("Delete reg error:", err);
+          alert('⚠️ 刪除報名時發生錯誤');
+        }
+      };
+
+      // 📤 新增發起活動
       const handleCreateEvent = async (newEventData) => {
         const newEvent = {
           ...newEventData,
@@ -130,26 +160,44 @@
           registrations: []
         };
 
-        // 即時更新 UI
         setEvents(prev => [newEvent, ...prev]);
         setShowCreateModal(false);
 
-        // 背景寫入 Google 試算表
         try {
-          setSyncStatus('⏳ 正在同步寫入雲端...');
+          setSyncStatus('⏳ 正在將活動寫入雲端...');
           await fetch(API_URL, {
             method: 'POST',
-            body: JSON.stringify({
-              action: 'create_event',
-              data: newEvent
-            })
+            body: JSON.stringify({ action: 'create_event', data: newEvent })
           });
           setSyncStatus('✅ 活動成功寫入雲端！');
-          alert('🏕️ 露營活動發起成功！資料已同步至 Google 雲端試算表。');
+          alert('🏕️ 露營活動發起成功！已同步至 Google 試算表。');
           loadEventsFromCloud();
         } catch (err) {
           console.error("Create event error:", err);
           alert('⚠️ 活動已建立，但同步雲端發生錯誤。');
+        }
+      };
+
+      // 🗑️ 刪除整個露營活動
+      const handleDeleteEvent = async (eventId) => {
+        if (!confirm('⚠️ 警告：確定要刪除整個露營活動嗎？所有已報名的紀錄也將一併刪除，無法復原。')) return;
+
+        // 即時移除 UI
+        setEvents(prev => prev.filter(e => String(e.id) !== String(eventId)));
+        setSelectedEvent(null);
+
+        try {
+          setSyncStatus('⏳ 正在從 Google 試算表刪除活動...');
+          await fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'delete_event', id: eventId })
+          });
+          setSyncStatus('✅ 活動已成功刪除');
+          alert('🗑️ 活動已成功刪除！');
+          loadEventsFromCloud();
+        } catch (err) {
+          console.error("Delete event error:", err);
+          alert('⚠️ 刪除活動時發生錯誤');
         }
       };
 
@@ -211,6 +259,8 @@
                 event={selectedEvent} 
                 onBack={() => setSelectedEvent(null)}
                 onOpenRegister={() => setShowRegisterModal(true)}
+                onCancelReg={handleCancelRegistration}
+                onDeleteEvent={handleDeleteEvent}
               />
             ) : (
               <div>
@@ -232,7 +282,6 @@
                   </div>
                 </div>
 
-                {/* 載入中狀態 */}
                 {loading && events.length === 0 ? (
                   <div class="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-xs">
                     <div class="text-4xl animate-bounce mb-3">🏕️</div>
@@ -430,7 +479,7 @@
     // ----------------------------------------------------
     // 組件 3：活動詳細視圖 & 已報名名單
     // ----------------------------------------------------
-    function EventDetailView({ event, onBack, onOpenRegister }) {
+    function EventDetailView({ event, onBack, onOpenRegister, onCancelReg, onDeleteEvent }) {
       const regs = event.registrations || [];
       const totalBookedTents = regs.reduce((sum, r) => sum + Number(r.tents || 1), 0);
       const totalAdults = regs.reduce((sum, r) => sum + Number(r.adults || 0), 0);
@@ -440,11 +489,19 @@
 
       return (
         <div class="space-y-6">
-          <button 
-            onClick={onBack}
-            class="inline-flex items-center gap-1 text-sm font-medium text-emerald-800 hover:text-emerald-900 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
-            ⬅ 返回活動列表
-          </button>
+          <div class="flex items-center justify-between">
+            <button 
+              onClick={onBack}
+              class="inline-flex items-center gap-1 text-sm font-medium text-emerald-800 hover:text-emerald-900 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200">
+              ⬅ 返回活動列表
+            </button>
+
+            <button 
+              onClick={() => onDeleteEvent(event.id)}
+              class="inline-flex items-center gap-1 text-xs font-bold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-3.5 py-2 rounded-xl border border-rose-200 transition">
+              🗑️ 刪除此露營活動
+            </button>
+          </div>
 
           <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-200 grid grid-cols-1 lg:grid-cols-3">
             <div class="lg:col-span-1 h-64 lg:h-auto relative">
@@ -527,6 +584,7 @@
                       <th class="p-3">車號</th>
                       <th class="p-3 text-center">夜衝</th>
                       <th class="p-3">備註 / 需求</th>
+                      <th class="p-3 text-right">管理</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100">
@@ -541,6 +599,13 @@
                           {reg.nightArrive ? <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-xs">🌙 是</span> : <span class="text-slate-400 text-xs">否</span>}
                         </td>
                         <td class="p-3 text-xs text-slate-500 max-w-xs truncate">{reg.note || '-'}</td>
+                        <td class="p-3 text-right">
+                          <button 
+                            onClick={() => onCancelReg(event.id, reg.id)}
+                            class="text-xs font-semibold text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded transition">
+                            取消報名
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

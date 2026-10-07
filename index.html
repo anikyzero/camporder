@@ -367,7 +367,7 @@
                 <button 
                   onClick={(e) => { e.stopPropagation(); setShowCreateModal(true); }}
                   class="sm:hidden bg-[#3F5144] hover:bg-[#2F3D33] active:bg-[#26332A] text-[#FFFDF8] border border-[#7C8D78] font-bold px-3.5 py-2 btn-rounded text-sm shadow-sm">
-                  發起逃離
+                  發起揪團計畫
                 </button>
               </div>
 
@@ -395,7 +395,7 @@
                 <button 
                   onClick={() => setShowCreateModal(true)}
                   class="hidden sm:flex bg-[#3F5144] hover:bg-[#2F3D33] active:bg-[#26332A] text-[#FFFDF8] font-bold px-4 py-2.5 btn-rounded shadow-sm transition items-center text-base border border-[#7C8D78]">
-                  發起逃離
+                  發起揪團計畫
                 </button>
               </div>
             </div>
@@ -504,7 +504,7 @@
         return (
           <div class="text-center py-16 bg-[#FFFDF8] rounded-2xl border border-dashed border-[#DDD8CB]">
             <h3 class="text-xl font-bold text-[#30332F]">目前沒有規劃中的逃離計畫</h3>
-            <p class="text-[#5A5F56] text-base mt-2">點擊右上角「發起逃離」，揪朋友一起去戶外吧！</p>
+            <p class="text-[#5A5F56] text-base mt-2">點擊右上角「發起揪團計畫」，揪朋友一起去戶外吧！</p>
           </div>
         );
       }
@@ -1084,7 +1084,7 @@
               <div class="flex justify-end gap-3 pt-3 border-t border-[#DDD8CB]">
                 <button type="button" onClick={onClose} class="px-5 py-2.5 text-[#5A5F56] font-bold">取消</button>
                 <button type="submit" class="px-7 py-2.5 bg-[#3F5144] hover:bg-[#2F3D33] active:bg-[#26332A] text-[#FFFDF8] font-bold btn-rounded shadow-sm text-base">
-                  {initialData ? '儲存修改' : '發起逃離'}
+                  {initialData ? '儲存修改' : '發起揪團計畫'}
                 </button>
               </div>
             </form>

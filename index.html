@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🏕️ 露營趣 - 露營活動發起與報名系統</title>
+  <title>🏕️ 露營趣 - 露營活動發起與報名系統 (Supabase 極速版)</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- React & ReactDOM CDN -->
@@ -11,6 +11,8 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <!-- Babel CDN -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Supabase JS Client CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
@@ -34,48 +36,81 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
 
-    // 🔗 您的 Google Apps Script 後端 API 網址
-    const API_URL = "https://script.google.com/macros/s/AKfycbwihVgkaIm-crh8uPcxQORK87NR1IuEvLG3dOwzmK1QMkgeXg6uuTi8paw5J9WmgoH8ag/exec";
+    // ⚡ 您的 Supabase 雲端資料庫設定
+    const SUPABASE_URL = "https://tmkiawfnjmkruncodpql.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_MEa8eCTpoPqwdK9BfKUdqA_Yen0Q3E4";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     function App() {
       const [events, setEvents] = useState([]);
       const [loading, setLoading] = useState(true);
-      const [syncStatus, setSyncStatus] = useState('☁️ 正在連線 Google 雲端...');
+      const [syncStatus, setSyncStatus] = useState('⚡ 正在連線 Supabase 極速資料庫...');
       const [currentView, setCurrentView] = useState('list'); // 'list' | 'calendar'
       const [selectedEvent, setSelectedEvent] = useState(null);
       const [showRegisterModal, setShowRegisterModal] = useState(false);
       const [showCreateModal, setShowCreateModal] = useState(false);
       const [searchTerm, setSearchTerm] = useState('');
 
-      // 📥 從 Google 試算表讀取雲端最新資料
-      const loadEventsFromCloud = async () => {
+      // 📥 從 Supabase 讀取最新活動與報名資料 (0.1秒極速)
+      const loadEventsFromSupabase = async () => {
         setLoading(true);
-        setSyncStatus('🔄 正在同步最新數據...');
+        setSyncStatus('⚡ 正在載入雲端數據...');
         try {
-          const nocacheUrl = `${API_URL}?_t=${Date.now()}`;
-          const res = await fetch(nocacheUrl, { cache: 'no-store' });
-          const result = await res.json();
-          if (result.status === 'success' && Array.isArray(result.data)) {
-            setEvents(result.data);
-            // 如果當前有選中的活動，同步更新其資料
-            if (selectedEvent) {
-              const updatedSel = result.data.find(e => String(e.id) === String(selectedEvent.id));
-              setSelectedEvent(updatedSel || null);
-            }
-            setSyncStatus('✅ 已成功與 Google 試算表同步');
-          } else {
-            setSyncStatus('☁️ 雲端已連線 (目前無活動)');
+          // 抓取活動
+          const { data: eventsData, error: evErr } = await supabase
+            .from('events')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (evErr) throw evErr;
+
+          // 抓取所有報名紀錄
+          const { data: regsData, error: regErr } = await supabase
+            .from('registrations')
+            .select('*');
+
+          if (regErr) throw regErr;
+
+          // 組合資料
+          const eventsMap = (eventsData || []).map(evt => {
+            const regs = (regsData || []).filter(r => String(r.eventId) === String(evt.id));
+            return {
+              ...evt,
+              registrations: regs
+            };
+          });
+
+          setEvents(eventsMap);
+
+          if (selectedEvent) {
+            const updatedSel = eventsMap.find(e => String(e.id) === String(selectedEvent.id));
+            setSelectedEvent(updatedSel || null);
           }
+
+          setSyncStatus('⚡ 雲端實時同步中 (Supabase 極速回應)');
         } catch (err) {
-          console.error("Cloud fetch error:", err);
-          setSyncStatus('⚠️ 雲端連線失敗，請點擊重新整理');
+          console.error("Supabase fetch error:", err);
+          setSyncStatus('⚠️ 連線失敗，請確認已執行建表 SQL 語法');
         } finally {
           setLoading(false);
         }
       };
 
+      // 初始化連線與即時訂閱 (Realtime Instant Update)
       useEffect(() => {
-        loadEventsFromCloud();
+        loadEventsFromSupabase();
+
+        // 開啟 Supabase Realtime 訂閱，當資料庫有任何變動，自動秒級刷新！
+        const subscription = supabase
+          .channel('schema-db-changes')
+          .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+            loadEventsFromSupabase();
+          })
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(subscription);
+        };
       }, []);
 
       // 搜尋與篩選活動
@@ -89,92 +124,88 @@
 
       // 📤 新增報名
       const handleRegisterSubmit = async (eventId, regData) => {
-        const newReg = { ...regData, id: 'reg-' + Date.now(), eventId };
-        
-        // 即時 UI 渲染
-        setEvents(prev => prev.map(evt => {
-          if (String(evt.id) === String(eventId)) {
-            const updatedRegs = [...(evt.registrations || []), newReg];
-            const updatedEvt = { ...evt, registrations: updatedRegs };
-            if (selectedEvent && String(selectedEvent.id) === String(eventId)) {
-              setSelectedEvent(updatedEvt);
-            }
-            return updatedEvt;
-          }
-          return evt;
-        }));
+        const newReg = { 
+          id: 'reg-' + Date.now(),
+          eventId: String(eventId),
+          name: regData.name,
+          phone: regData.phone,
+          tents: Number(regData.tents || 1),
+          adults: Number(regData.adults || 0),
+          kids: Number(regData.kids || 0),
+          carNo: regData.carNo || '',
+          nightArrive: Boolean(regData.nightArrive),
+          note: regData.note || ''
+        };
+
         setShowRegisterModal(false);
 
         try {
-          setSyncStatus('⏳ 正在同步寫入雲端...');
-          await fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'register', data: newReg })
-          });
-          setSyncStatus('✅ 報名成功！資料已同步至雲端');
-          alert('🎉 報名成功！資料已同步儲存至 Google 試算表！');
-          loadEventsFromCloud();
+          setSyncStatus('⚡ 正在秒速寫入 Supabase...');
+          const { error } = await supabase.from('registrations').insert([newReg]);
+          if (error) throw error;
+
+          setSyncStatus('✅ 報名已瞬時完成！');
+          alert('🎉 報名成功！資料已秒速寫入雲端，手機電腦自動同步！');
+          loadEventsFromSupabase();
         } catch (err) {
           console.error("Register submit error:", err);
-          alert('⚠️ 報名已在畫面生效，但同步雲端發生錯誤。');
+          alert('⚠️ 報名失敗：' + (err.message || '請檢查資料庫權限'));
         }
       };
 
       // 🗑️ 取消 / 刪除報名
       const handleCancelRegistration = async (eventId, regId) => {
-        if (!confirm('確定要取消/刪除這筆報名紀錄嗎？此動作將同步從 Google 試算表刪除。')) return;
-
-        // 即時扣除 UI
-        setEvents(prev => prev.map(evt => {
-          if (String(evt.id) === String(eventId)) {
-            const updatedRegs = (evt.registrations || []).filter(r => String(r.id) !== String(regId));
-            const updatedEvt = { ...evt, registrations: updatedRegs };
-            if (selectedEvent && String(selectedEvent.id) === String(eventId)) {
-              setSelectedEvent(updatedEvt);
-            }
-            return updatedEvt;
-          }
-          return evt;
-        }));
+        if (!confirm('確定要取消/刪除這筆報名紀錄嗎？此動作將同步從雲端資料庫刪除。')) return;
 
         try {
-          setSyncStatus('⏳ 正在從 Google 試算表刪除報名...');
-          await fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'delete_registration', id: regId })
-          });
-          setSyncStatus('✅ 報名已成功從雲端刪除');
+          setSyncStatus('⚡ 正在從雲端刪除報名...');
+          const { error } = await supabase
+            .from('registrations')
+            .delete()
+            .eq('id', String(regId));
+
+          if (error) throw error;
+
+          setSyncStatus('✅ 報名已成功刪除');
           alert('🗑️ 報名已成功刪除！');
-          loadEventsFromCloud();
+          loadEventsFromSupabase();
         } catch (err) {
           console.error("Delete reg error:", err);
-          alert('⚠️ 刪除報名時發生錯誤');
+          alert('⚠️ 刪除報名失敗：' + err.message);
         }
       };
 
       // 📤 新增發起活動
       const handleCreateEvent = async (newEventData) => {
         const newEvent = {
-          ...newEventData,
           id: 'evt-' + Date.now(),
-          registrations: []
+          title: newEventData.title,
+          location: newEventData.location,
+          address: newEventData.address || '',
+          startDate: newEventData.startDate,
+          endDate: newEventData.endDate,
+          maxTents: Number(newEventData.maxTents || 6),
+          feePerTent: Number(newEventData.feePerTent || 0),
+          organizer: newEventData.organizer,
+          organizerPhone: newEventData.organizerPhone || '',
+          paymentInfo: newEventData.paymentInfo || '',
+          imageUrl: newEventData.imageUrl || '',
+          description: newEventData.description || ''
         };
 
-        setEvents(prev => [newEvent, ...prev]);
         setShowCreateModal(false);
 
         try {
-          setSyncStatus('⏳ 正在將活動寫入雲端...');
-          await fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'create_event', data: newEvent })
-          });
-          setSyncStatus('✅ 活動成功寫入雲端！');
-          alert('🏕️ 露營活動發起成功！已同步至 Google 試算表。');
-          loadEventsFromCloud();
+          setSyncStatus('⚡ 正在將新活動秒速寫入 Supabase...');
+          const { error } = await supabase.from('events').insert([newEvent]);
+          if (error) throw error;
+
+          setSyncStatus('✅ 活動發起成功！');
+          alert('🏕️ 露營活動發起成功！資料已秒速同步至雲端。');
+          loadEventsFromSupabase();
         } catch (err) {
           console.error("Create event error:", err);
-          alert('⚠️ 活動已建立，但同步雲端發生錯誤。');
+          alert('⚠️ 發起活動失敗：' + (err.message || '請確認是否已點擊 Run 執行建表 SQL'));
         }
       };
 
@@ -182,22 +213,23 @@
       const handleDeleteEvent = async (eventId) => {
         if (!confirm('⚠️ 警告：確定要刪除整個露營活動嗎？所有已報名的紀錄也將一併刪除，無法復原。')) return;
 
-        // 即時移除 UI
-        setEvents(prev => prev.filter(e => String(e.id) !== String(eventId)));
         setSelectedEvent(null);
 
         try {
-          setSyncStatus('⏳ 正在從 Google 試算表刪除活動...');
-          await fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'delete_event', id: eventId })
-          });
+          setSyncStatus('⚡ 正在刪除活動...');
+          const { error } = await supabase
+            .from('events')
+            .delete()
+            .eq('id', String(eventId));
+
+          if (error) throw error;
+
           setSyncStatus('✅ 活動已成功刪除');
           alert('🗑️ 活動已成功刪除！');
-          loadEventsFromCloud();
+          loadEventsFromSupabase();
         } catch (err) {
           console.error("Delete event error:", err);
-          alert('⚠️ 刪除活動時發生錯誤');
+          alert('⚠️ 刪除活動失敗：' + err.message);
         }
       };
 
@@ -206,18 +238,20 @@
           {/* 頂部導覽列 Header */}
           <header class="bg-emerald-800 text-white shadow-md sticky top-0 z-30">
             <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div class="flex items-center gap-3 cursor-pointer" onClick={() => { setSelectedEvent(null); loadEventsFromCloud(); }}>
+              <div class="flex items-center gap-3 cursor-pointer" onClick={() => { setSelectedEvent(null); loadEventsFromSupabase(); }}>
                 <span class="text-3xl">🏕️</span>
                 <div>
-                  <h1 class="text-xl font-bold tracking-wide">露營趣 CampOrder</h1>
+                  <h1 class="text-xl font-bold tracking-wide flex items-center gap-2">
+                    露營趣 CampOrder <span class="text-xs bg-amber-400 text-slate-900 px-2 py-0.5 rounded font-bold">Supabase ⚡ 極速版</span>
+                  </h1>
                   <p class="text-xs text-emerald-200">露營群組活動發起與自主報名系統</p>
                 </div>
               </div>
 
               <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
                 <button 
-                  onClick={loadEventsFromCloud}
-                  title="手動同步最新資料"
+                  onClick={loadEventsFromSupabase}
+                  title="手動刷新資料"
                   class="bg-emerald-900 hover:bg-emerald-950 text-emerald-100 text-xs px-3 py-2 rounded-lg flex items-center gap-1 border border-emerald-700 font-medium">
                   <span>🔄</span> 重新整理
                 </button>
@@ -247,9 +281,9 @@
           </header>
 
           {/* 雲端同步狀態標籤 */}
-          <div class="bg-emerald-900 text-emerald-200 text-xs py-1 px-4 text-center font-medium flex items-center justify-center gap-2">
+          <div class="bg-slate-900 text-emerald-400 text-xs py-1.5 px-4 text-center font-medium flex items-center justify-center gap-2 border-b border-slate-800">
             <span>{syncStatus}</span>
-            {loading && <span class="animate-spin">⏳</span>}
+            {loading && <span class="animate-spin">⚡</span>}
           </div>
 
           {/* 主要內容區 Main Content */}
@@ -284,8 +318,8 @@
 
                 {loading && events.length === 0 ? (
                   <div class="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-xs">
-                    <div class="text-4xl animate-bounce mb-3">🏕️</div>
-                    <p class="text-slate-600 font-medium text-sm">正在從 Google 雲端讀取最新露營活動...</p>
+                    <div class="text-4xl animate-bounce mb-3">⚡</div>
+                    <p class="text-slate-600 font-medium text-sm">正在連線 Supabase 資料庫...</p>
                   </div>
                 ) : (
                   currentView === 'list' ? (
@@ -301,7 +335,7 @@
           {/* 頁尾 Footer */}
           <footer class="bg-slate-900 text-slate-400 py-6 border-t border-slate-800 text-center text-xs mt-12">
             <p>🏕️ 露營趣 CampOrder - 專為露營社群設計的免費線上報名平台</p>
-            <p class="mt-1 text-slate-500">已連結 Google 雲端硬碟試算表實時同步 ☁️</p>
+            <p class="mt-1 text-slate-500">已連結 Supabase 專業 PostgreSQL 雲端資料庫 ⚡ 支援 Realtime 實時自動更新</p>
           </footer>
 
           {/* 報名彈出視窗 */}

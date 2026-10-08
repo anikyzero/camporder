@@ -922,7 +922,7 @@
       const checkDate = event.startDate;
       const isExpired = Boolean(checkDate && checkDate < todayStr);
       const isDeadlinePassed = !isExpired && Boolean(event.deadlineDate && event.deadlineDate < todayStr);
-      const canRegister = !isExpired && !isDeadlinePassed;
+      const canRegister = !isExpired;
 
       return (
         <div class="space-y-6">
@@ -934,20 +934,21 @@
             </button>
 
             <div class="flex items-center gap-2">
-              {/* 過期活動不能再進行任何編輯 (隱藏編輯按鈕) */}
+              {/* 過期活動不能再進行任何編輯 */}
               {!isExpired && (
-                <button 
-                  onClick={() => onEditEvent(event)}
-                  class="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-[#30332F] bg-[#EEEADF] hover:bg-[#E4DCCB] px-3.5 py-2.5 btn-rounded border border-[#DDD8CB]">
-                  編輯計畫
-                </button>
+                <>
+                  <button 
+                    onClick={() => onEditEvent(event)}
+                    class="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-[#30332F] bg-[#EEEADF] hover:bg-[#E4DCCB] px-3.5 py-2.5 btn-rounded border border-[#DDD8CB]">
+                    編輯計畫
+                  </button>
+                  <button 
+                    onClick={() => onDeleteEvent(event.id)}
+                    class="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 px-3.5 py-2.5 btn-rounded border border-rose-200">
+                    刪除計畫
+                  </button>
+                </>
               )}
-
-              <button 
-                onClick={() => onDeleteEvent(event.id)}
-                class="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 px-3.5 py-2.5 btn-rounded border border-rose-200">
-                刪除計畫
-              </button>
             </div>
           </div>
 
@@ -988,7 +989,7 @@
                     ? 'bg-[#E5E1D9] text-[#77736A] cursor-not-allowed' 
                     : 'bg-[#B8794A] hover:bg-[#9F633D] text-[#FFFDF8]'
                 }`}>
-                {isExpired ? '已結束' : isDeadlinePassed ? '已截止報名' : '加入這場逃離'}
+                {isExpired ? '已結束' : '加入這場逃離'}
               </button>
             </div>
 

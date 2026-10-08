@@ -482,7 +482,7 @@
             <div class="max-w-6xl mx-auto px-5 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div 
                 class="flex items-center justify-between w-full sm:w-auto cursor-pointer" 
-                onClick={() => { setSelectedEvent(null); setCurrentView('list'); setSearchTerm(''); loadEventsFromSupabase(); }}>
+                onClick={() => { setSelectedEvent(null); setCurrentView('list'); setSearchTerm(''); loadEventsFromSupabase(); window.scrollTo(0, 0); }}>
                 <div>
                   <h1 class="text-xl sm:text-2xl font-bold tracking-wide text-[#FFFDFB]">
                     假日逃離計畫
@@ -507,12 +507,12 @@
 
                 <div class="bg-[#754E4E]/80 p-1 rounded-xl flex gap-1 text-xs sm:text-sm font-medium">
                   <button 
-                    onClick={() => { setCurrentView('list'); setSelectedEvent(null); }}
+                    onClick={() => { setCurrentView('list'); setSelectedEvent(null); window.scrollTo(0, 0); }}
                     class={`px-3.5 py-2 btn-rounded transition ${currentView === 'list' ? 'bg-[#FFFDFB] text-[#4A3B3B] font-bold shadow-xs' : 'text-[#F4ECEB] hover:text-white'}`}>
                     逃離清單
                   </button>
                   <button 
-                    onClick={() => { setCurrentView('calendar'); setSelectedEvent(null); }}
+                    onClick={() => { setCurrentView('calendar'); setSelectedEvent(null); window.scrollTo(0, 0); }}
                     class={`px-3.5 py-2 btn-rounded transition ${currentView === 'calendar' ? 'bg-[#FFFDFB] text-[#4A3B3B] font-bold shadow-xs' : 'text-[#F4ECEB] hover:text-white'}`}>
                     逃離月曆
                   </button>
@@ -537,7 +537,7 @@
             {selectedEvent ? (
               <EventDetailView 
                 event={selectedEvent} 
-                onBack={() => setSelectedEvent(null)}
+                onBack={() => { setSelectedEvent(null); window.scrollTo(0, 0); }}
                 onOpenRegister={() => setShowRegisterModal(true)}
                 onCancelReg={handleCancelRegistration}
                 onDeleteEvent={handleDeleteEvent}
@@ -546,45 +546,49 @@
               />
             ) : (
               <div>
-                {/* 📢 逃離基地公告區 */}
-                <div class="mb-6 bg-[#FFFDF8] p-4 sm:p-5 rounded-2xl border border-[#DDD8CB] shadow-xs overflow-hidden">
-                  <div class="flex items-center justify-between border-b border-[#DDD8CB]/60 pb-2.5 mb-2.5">
-                    <h3 class="font-bold text-[#3F5144] text-base sm:text-lg flex items-center gap-2">
-                      <span>📢</span> 逃離基地公告
-                    </h3>
-                    <button 
-                      onClick={handleOpenNoticeEdit}
-                      class="text-xs sm:text-sm font-bold text-[#B8794A] hover:text-[#9F633D] px-3 py-1 rounded-lg bg-[#F0DED0]/60 hover:bg-[#F0DED0] transition border border-[#9A5E3D]/20 shrink-0">
-                      編輯公告
-                    </button>
-                  </div>
-                  <div class="px-1 py-0.5">
-                    <p class="text-[#30332F] text-base sm:text-lg leading-relaxed whitespace-pre-line font-medium break-words">
-                      {noticeText}
-                    </p>
-                  </div>
-                </div>
+                {/* 📢 逃離基地公告區與搜尋統計列 (僅在「逃離清單」視圖顯示) */}
+                {currentView === 'list' && (
+                  <>
+                    <div class="mb-6 bg-[#FFFDFB] p-4 sm:p-5 rounded-2xl border border-[#E8DCD5] shadow-xs overflow-hidden">
+                      <div class="flex items-center justify-between border-b border-[#E8DCD5]/60 pb-2.5 mb-2.5">
+                        <h3 class="font-bold text-[#8A5F5F] text-base sm:text-lg flex items-center gap-2">
+                          <span>📢</span> 逃離基地公告
+                        </h3>
+                        <button 
+                          onClick={handleOpenNoticeEdit}
+                          class="text-xs sm:text-sm font-bold text-[#C88A75] hover:text-[#B27763] px-3 py-1 rounded-lg bg-[#F8E8DF]/60 hover:bg-[#F8E8DF] transition border border-[#C88A75]/20 shrink-0">
+                          編輯公告
+                        </button>
+                      </div>
+                      <div class="px-1 py-0.5">
+                        <p class="text-[#4A3B3B] text-base sm:text-lg leading-relaxed whitespace-pre-line font-medium break-words">
+                          {noticeText}
+                        </p>
+                      </div>
+                    </div>
 
-                <div class="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#FFFDF8] p-4 sm:p-4.5 rounded-2xl border border-[#DDD8CB] shadow-xs overflow-hidden">
-                  <div class="relative w-full sm:w-80">
-                    <input 
-                      type="text"
-                      placeholder="搜尋地點、營地、發起人或逃離夥伴..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      class="w-full px-4 py-2.5 input-outdoor text-base"
-                    />
-                  </div>
+                    <div class="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#FFFDFB] p-4 sm:p-4.5 rounded-2xl border border-[#E8DCD5] shadow-xs overflow-hidden">
+                      <div class="relative w-full sm:w-80">
+                        <input 
+                          type="text"
+                          placeholder="搜尋地點、營地、發起人或逃離夥伴..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          class="w-full px-4 py-2.5 input-outdoor text-base"
+                        />
+                      </div>
 
-                  <div class="text-sm sm:text-base text-[#5A5F56] font-medium text-left sm:text-right w-full sm:w-auto">
-                    目前共有 <span class="text-[#30332F] font-bold text-lg sm:text-xl">{filteredEvents.length}</span> 場逃離計畫 
-                    （<span class="text-[#3F5144] font-bold">{activeCount}</span> 場進行中 / <span class="text-[#737970] font-bold">{expiredCount}</span> 場已結束）
-                  </div>
-                </div>
+                      <div class="text-sm sm:text-base text-[#7A6969] font-medium text-left sm:text-right w-full sm:w-auto">
+                        目前共有 <span class="text-[#4A3B3B] font-bold text-lg sm:text-xl">{filteredEvents.length}</span> 場逃離計畫 
+                        （<span class="text-[#8A5F5F] font-bold">{activeCount}</span> 場進行中 / <span class="text-[#887977] font-bold">{expiredCount}</span> 場已結束）
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {loading && events.length === 0 ? (
-                  <div class="text-center py-20 bg-[#FFFDF8] rounded-2xl border border-[#DDD8CB]">
-                    <p class="text-[#5A5F56] font-medium text-base">正在讀取最新的假日逃離計畫...</p>
+                  <div class="text-center py-20 bg-[#FFFDFB] rounded-2xl border border-[#E8DCD5]">
+                    <p class="text-[#7A6969] font-medium text-base">正在讀取最新的假日逃離計畫...</p>
                   </div>
                 ) : (
                   currentView === 'list' ? (

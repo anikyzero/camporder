@@ -693,6 +693,9 @@
       const totalPeople = regs.reduce((sum, r) => sum + Number(r.adults || 0) + Number(r.kids || 0), 0);
       const totalTents = regs.reduce((sum, r) => sum + Number(r.tents || 1), 0);
 
+      const todayStr = new Date().toISOString().split('T')[0];
+      const isRegistrationClosed = isExpired || (evt.deadlineDate && evt.deadlineDate < todayStr);
+
       return (
         <div 
           onClick={() => onSelectEvent(evt)}
@@ -703,13 +706,17 @@
           }`}>
           
           <div>
-            {/* 1. 卡片頂部：活動日期區塊與「已結束」標籤 */}
+            {/* 1. 卡片頂部：活動日期區塊與「已截止報名 / 報名中」標籤 */}
             <div class="border-b border-[#DDD8CB]/60 pb-3 mb-3">
               <div class="flex items-center justify-between gap-2 mb-1">
                 <span class="text-xs sm:text-sm font-bold text-[#5A5F56]">活動日期</span>
-                {isExpired && (
-                  <span class="bg-[#E5E1D9] text-[#77736A] px-3 py-0.5 rounded-full text-xs font-bold shrink-0">
-                    已結束
+                {isRegistrationClosed ? (
+                  <span class="bg-[#E5E1D9] text-[#77736A] px-3 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0">
+                    已截止報名
+                  </span>
+                ) : (
+                  <span class="bg-[#E1E8DD] text-[#52664F] px-3 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0">
+                    報名中
                   </span>
                 )}
               </div>

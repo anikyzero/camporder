@@ -18,22 +18,22 @@
   
   <style>
     :root {
-      --bg-main: #F5F1E8;
-      --bg-section: #EEEADF;
-      --bg-card: #FFFDF8;
-      --green-dark: #3F5144;
-      --green-dark-hover: #2F3D33;
-      --green: #7C8D78;
-      --green-hover: #657662;
-      --brown: #B8794A;
-      --brown-hover: #9F633D;
-      --text-main: #30332F;
-      --text-secondary: #5A5F56;
-      --text-disabled: #AAA99F;
-      --border: #DDD8CB;
-      --success-bg: #E1E8DD;
-      --success-text: #52664F;
-      --shadow: 0 4px 16px rgba(48, 51, 47, 0.06);
+      --bg-main: #F9F6F0;
+      --bg-section: #F2EAE5;
+      --bg-card: #FFFDFB;
+      --green-dark: #8A5F5F;
+      --green-dark-hover: #754E4E;
+      --green: #C88A75;
+      --green-hover: #B27763;
+      --brown: #C88A75;
+      --brown-hover: #B27763;
+      --text-main: #4A3B3B;
+      --text-secondary: #7A6969;
+      --text-disabled: #B8ADA9;
+      --border: #E8DCD5;
+      --success-bg: #EFE3E2;
+      --success-text: #8A5F5F;
+      --shadow: 0 4px 16px rgba(138, 95, 95, 0.08);
     }
 
     /* 👴 年紀友善基礎字級 (16px base) */
@@ -60,7 +60,7 @@
     }
 
     .card-outdoor:hover {
-      border-color: #B8BDAF;
+      border-color: #D8C2B8;
       transform: translateY(-2px);
     }
 
@@ -75,7 +75,7 @@
     .input-outdoor:focus {
       outline: none;
       border-color: var(--green);
-      box-shadow: 0 0 0 3px rgba(124, 141, 120, 0.15);
+      box-shadow: 0 0 0 3px rgba(200, 138, 117, 0.15);
     }
 
     .custom-scrollbar::-webkit-scrollbar {
@@ -83,7 +83,7 @@
       height: 6px;
     }
     .custom-scrollbar::-webkit-scrollbar-thumb {
-      background-color: #cbd5e1;
+      background-color: #e2d2ca;
       border-radius: 9999px;
     }
   </style>
@@ -100,11 +100,11 @@
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const AVATAR_COLORS = [
-      { bg: '#E3E5D9', text: '#3F5144' },
-      { bg: '#D9DFD1', text: '#30332F' },
-      { bg: '#E4DCCB', text: '#3F5144' },
-      { bg: '#D8E1E0', text: '#30332F' },
-      { bg: '#E7D5C7', text: '#B8794A' }
+      { bg: '#EFE3E2', text: '#8A5F5F' },
+      { bg: '#F8E8DF', text: '#B86B52' },
+      { bg: '#F2EAE5', text: '#4A3B3B' },
+      { bg: '#EADFD9', text: '#8A5F5F' },
+      { bg: '#E8DCD5', text: '#C88A75' }
     ];
 
     function App() {
@@ -473,21 +473,21 @@
       return (
         <div class="min-h-screen flex flex-col">
           {/* 頂部導覽列 Header */}
-          <header class="bg-[#3F5144] text-[#FFFDF8] shadow-md sticky top-0 z-30">
+          <header class="bg-[#8A5F5F] text-[#FFFDFB] shadow-md sticky top-0 z-30">
             <div class="max-w-6xl mx-auto px-5 sm:px-6 lg:px-8 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
               <div 
                 class="flex items-center justify-between w-full sm:w-auto cursor-pointer" 
                 onClick={() => { setSelectedEvent(null); setCurrentView('list'); setSearchTerm(''); loadEventsFromSupabase(); }}>
                 <div>
-                  <h1 class="text-xl sm:text-2xl font-bold tracking-wide text-[#FFFDF8]">
+                  <h1 class="text-xl sm:text-2xl font-bold tracking-wide text-[#FFFDFB]">
                     假日逃離計畫
                   </h1>
-                  <p class="text-xs sm:text-sm text-[#E1E8DD] font-medium mt-0.5">今晚睡哪裡？先報名再說</p>
+                  <p class="text-xs sm:text-sm text-[#F4ECEB] font-medium mt-0.5">今晚睡哪裡？先報名再說</p>
                 </div>
 
                 <button 
                   onClick={(e) => { e.stopPropagation(); setShowCreateModal(true); }}
-                  class="sm:hidden bg-[#3F5144] hover:bg-[#2F3D33] active:bg-[#26332A] text-[#FFFDF8] border border-[#7C8D78] font-bold px-3.5 py-2 btn-rounded text-sm shadow-sm">
+                  class="sm:hidden bg-[#C88A75] hover:bg-[#B27763] active:bg-[#9E6452] text-white border border-[#D89B87] font-bold px-3.5 py-2 btn-rounded text-sm shadow-sm">
                   發起揪團計畫
                 </button>
               </div>
@@ -496,26 +496,26 @@
                 <button 
                   onClick={loadEventsFromSupabase}
                   title="重新載入數據"
-                  class="bg-[#2F3D33] hover:bg-[#26332A] text-[#E1E8DD] text-xs sm:text-sm px-3.5 py-2 btn-rounded font-medium border border-[#7C8D78]/40">
+                  class="bg-[#754E4E] hover:bg-[#634040] text-[#F4ECEB] text-xs sm:text-sm px-3.5 py-2 btn-rounded font-medium border border-[#B88A8A]/40">
                   重新整理
                 </button>
 
-                <div class="bg-[#2F3D33]/80 p-1 rounded-xl flex gap-1 text-xs sm:text-sm font-medium">
+                <div class="bg-[#754E4E]/80 p-1 rounded-xl flex gap-1 text-xs sm:text-sm font-medium">
                   <button 
                     onClick={() => { setCurrentView('list'); setSelectedEvent(null); }}
-                    class={`px-3.5 py-2 btn-rounded transition ${currentView === 'list' ? 'bg-[#FFFDF8] text-[#30332F] font-bold shadow-xs' : 'text-[#E1E8DD] hover:text-white'}`}>
+                    class={`px-3.5 py-2 btn-rounded transition ${currentView === 'list' ? 'bg-[#FFFDFB] text-[#4A3B3B] font-bold shadow-xs' : 'text-[#F4ECEB] hover:text-white'}`}>
                     逃離清單
                   </button>
                   <button 
                     onClick={() => { setCurrentView('calendar'); setSelectedEvent(null); }}
-                    class={`px-3.5 py-2 btn-rounded transition ${currentView === 'calendar' ? 'bg-[#FFFDF8] text-[#30332F] font-bold shadow-xs' : 'text-[#E1E8DD] hover:text-white'}`}>
+                    class={`px-3.5 py-2 btn-rounded transition ${currentView === 'calendar' ? 'bg-[#FFFDFB] text-[#4A3B3B] font-bold shadow-xs' : 'text-[#F4ECEB] hover:text-white'}`}>
                     逃離月曆
                   </button>
                 </div>
 
                 <button 
                   onClick={() => setShowCreateModal(true)}
-                  class="hidden sm:flex bg-[#3F5144] hover:bg-[#2F3D33] active:bg-[#26332A] text-[#FFFDF8] font-bold px-4 py-2.5 btn-rounded shadow-sm transition items-center text-base border border-[#7C8D78]">
+                  class="hidden sm:flex bg-[#C88A75] hover:bg-[#B27763] active:bg-[#9E6452] text-white font-bold px-4 py-2.5 btn-rounded shadow-sm transition items-center text-base border border-[#D89B87]">
                   發起揪團計畫
                 </button>
               </div>
@@ -523,7 +523,7 @@
           </header>
 
           {/* 雲端同步狀態 */}
-          <div class="bg-[#30332F] text-[#E1E8DD] text-xs sm:text-sm py-2 px-5 text-center font-medium flex items-center justify-center gap-2">
+          <div class="bg-[#4A3B3B] text-[#F4ECEB] text-xs sm:text-sm py-2 px-5 text-center font-medium flex items-center justify-center gap-2">
             <span>{syncStatus}</span>
           </div>
 
@@ -703,65 +703,65 @@
           onClick={() => onSelectEvent(evt)}
           class={`p-4 sm:p-5 flex flex-col justify-between cursor-pointer group space-y-2.5 rounded-2xl border transition transform hover:-translate-y-0.5 ${
             isExpired 
-              ? 'bg-[#EEEADF] border-[#DDD8CB] opacity-90 hover:border-[#B8BDAF]' 
+              ? 'bg-[#F2EAE5] border-[#E8DCD5] opacity-90 hover:border-[#D8C2B8]' 
               : 'card-outdoor'
           }`}>
           
           <div>
             {/* 1. 卡片頂部：活動日期區塊與狀態標籤 */}
-            <div class="border-b border-[#DDD8CB]/60 pb-2 mb-2">
+            <div class="border-b border-[#E8DCD5]/60 pb-2 mb-2">
               <div class="flex items-center justify-between gap-2 mb-0.5">
-                <span class="text-sm font-bold text-[#5A5F56]">活動日期</span>
+                <span class="text-sm font-bold text-[#7A6969]">活動日期</span>
                 {isExpired ? (
-                  <span class="bg-[#E5E1D9] text-[#77736A] px-3 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0">
+                  <span class="bg-[#EBE3E0] text-[#887977] px-3 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0">
                     已結束
                   </span>
                 ) : isDeadlinePassed ? (
-                  <span class="bg-[#F0DED0] text-[#9A5E3D] px-3 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0">
+                  <span class="bg-[#F8E8DF] text-[#B86B52] px-3 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0">
                     已截止報名
                   </span>
                 ) : (
-                  <span class="bg-[#E1E8DD] text-[#52664F] px-3 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0">
+                  <span class="bg-[#EFE3E2] text-[#8A5F5F] px-3 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0">
                     報名中
                   </span>
                 )}
               </div>
-              <div class={`font-bold text-lg sm:text-xl ${isExpired ? 'text-[#737970]' : 'text-[#B8794A]'}`}>
+              <div class={`font-bold text-lg sm:text-xl ${isExpired ? 'text-[#887977]' : 'text-[#C88A75]'}`}>
                 {evt.startDate} ～ {evt.endDate}
               </div>
             </div>
 
             {/* 2. 中間活動大標題 */}
-            <h3 class={`font-extrabold text-2xl sm:text-3xl transition line-clamp-1 mb-2.5 ${isExpired ? 'text-[#5A5F56]' : 'text-[#30332F] group-hover:text-[#3F5144]'}`}>
+            <h3 class={`font-extrabold text-2xl sm:text-3xl transition line-clamp-1 mb-2.5 ${isExpired ? 'text-[#7A6969]' : 'text-[#4A3B3B] group-hover:text-[#8A5F5F]'}`}>
               {evt.title}
             </h3>
 
             {/* 3. 條列屬性 */}
             <div class="space-y-1 text-base sm:text-lg">
               {/* 地點 */}
-              <div class="flex items-center justify-between py-0.5 border-b border-dashed border-[#DDD8CB]/40 gap-2">
-                <span class="text-[#5A5F56] font-medium shrink-0">逃離地點</span>
-                <span class="font-bold text-[#30332F] text-lg sm:text-xl text-right truncate">{evt.location}</span>
+              <div class="flex items-center justify-between py-0.5 border-b border-dashed border-[#E8DCD5]/40 gap-2">
+                <span class="text-[#7A6969] font-medium shrink-0">逃離地點</span>
+                <span class="font-bold text-[#4A3B3B] text-lg sm:text-xl text-right truncate">{evt.location}</span>
               </div>
 
               {/* 報名截止 */}
-              <div class="flex items-center justify-between py-0.5 border-b border-dashed border-[#DDD8CB]/40 gap-2">
-                <span class="text-[#5A5F56] font-medium shrink-0">報名截止</span>
-                <span class={`font-bold text-lg sm:text-xl text-right shrink-0 ${isExpired ? 'text-[#737970]' : 'text-[#B8794A]'}`}>
+              <div class="flex items-center justify-between py-0.5 border-b border-dashed border-[#E8DCD5]/40 gap-2">
+                <span class="text-[#7A6969] font-medium shrink-0">報名截止</span>
+                <span class={`font-bold text-lg sm:text-xl text-right shrink-0 ${isExpired ? 'text-[#887977]' : 'text-[#C88A75]'}`}>
                   {evt.deadlineDate || '無期限'}
                 </span>
               </div>
 
               {/* 發起人 */}
-              <div class="flex items-center justify-between py-0.5 border-b border-dashed border-[#DDD8CB]/40 gap-2">
-                <span class="text-[#5A5F56] font-medium shrink-0">發起人</span>
-                <span class="font-bold text-[#30332F] text-lg sm:text-xl text-right truncate">{evt.organizer}</span>
+              <div class="flex items-center justify-between py-0.5 border-b border-dashed border-[#E8DCD5]/40 gap-2">
+                <span class="text-[#7A6969] font-medium shrink-0">發起人</span>
+                <span class="font-bold text-[#4A3B3B] text-lg sm:text-xl text-right truncate">{evt.organizer}</span>
               </div>
 
               {/* 目前夥伴 */}
               <div class="flex items-center justify-between py-0.5 gap-2">
-                <span class="text-[#5A5F56] font-medium shrink-0">目前夥伴</span>
-                <span class={`font-bold text-lg sm:text-xl text-right shrink-0 ${isExpired ? 'text-[#737970]' : 'text-[#3F5144]'}`}>
+                <span class="text-[#7A6969] font-medium shrink-0">目前夥伴</span>
+                <span class={`font-bold text-lg sm:text-xl text-right shrink-0 ${isExpired ? 'text-[#887977]' : 'text-[#8A5F5F]'}`}>
                   {regs.length} 組 ({totalTents} 帳 / {totalPeople} 人)
                 </span>
               </div>
@@ -769,9 +769,9 @@
           </div>
 
           {/* 4. 底部引導 */}
-          <div class="pt-2 border-t border-[#DDD8CB] flex items-center justify-between text-[#5A5F56]">
+          <div class="pt-2 border-t border-[#E8DCD5] flex items-center justify-between text-[#7A6969]">
             <span class="text-base font-medium">{isExpired ? '點擊查看歷史紀錄' : '點擊查看詳情與報名'}</span>
-            <span class="text-lg font-bold text-[#3F5144] group-hover:translate-x-1 transition">➔</span>
+            <span class="text-lg font-bold text-[#8A5F5F] group-hover:translate-x-1 transition">➔</span>
           </div>
         </div>
       );
@@ -931,7 +931,7 @@
           <div class="flex items-center justify-between gap-2 flex-wrap">
             <button 
               onClick={onBack}
-              class="inline-flex items-center gap-1 text-sm sm:text-base font-bold text-[#3F5144] bg-[#FFFDF8] px-4 py-2.5 btn-rounded border border-[#DDD8CB] shadow-xs">
+              class="inline-flex items-center gap-1 text-sm sm:text-base font-bold text-[#8A5F5F] bg-[#FFFDFB] px-4 py-2.5 btn-rounded border border-[#E8DCD5] shadow-xs">
               ⬅ 返回逃離清單
             </button>
 
@@ -941,7 +941,7 @@
                 <>
                   <button 
                     onClick={() => onEditEvent(event)}
-                    class="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-[#30332F] bg-[#EEEADF] hover:bg-[#E4DCCB] px-3.5 py-2.5 btn-rounded border border-[#DDD8CB]">
+                    class="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-[#4A3B3B] bg-[#F2EAE5] hover:bg-[#E5D9D2] px-3.5 py-2.5 btn-rounded border border-[#E8DCD5]">
                     編輯計畫
                   </button>
                   <button 
@@ -954,33 +954,33 @@
             </div>
           </div>
 
-          <div class="bg-[#FFFDF8] rounded-2xl p-5 sm:p-7 border border-[#DDD8CB] shadow-xs space-y-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start gap-4 border-b border-[#DDD8CB] pb-4">
+          <div class="bg-[#FFFDFB] rounded-2xl p-5 sm:p-7 border border-[#E8DCD5] shadow-xs space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start gap-4 border-b border-[#E8DCD5] pb-4">
               <div>
                 <div class="flex items-center gap-2 mb-2 flex-wrap">
-                  <span class="bg-[#E1E8DD] text-[#52664F] text-xs sm:text-sm font-bold px-3 py-1 rounded-full">
+                  <span class="bg-[#EFE3E2] text-[#8A5F5F] text-xs sm:text-sm font-bold px-3 py-1 rounded-full">
                     地點：{event.location}
                   </span>
                   {isExpired ? (
-                    <span class="bg-[#E5E1D9] text-[#77736A] text-xs sm:text-sm font-bold px-3 py-1 rounded-full">
+                    <span class="bg-[#EBE3E0] text-[#887977] text-xs sm:text-sm font-bold px-3 py-1 rounded-full">
                       已結束
                     </span>
                   ) : isDeadlinePassed ? (
-                    <span class="bg-[#F0DED0] text-[#9A5E3D] text-xs sm:text-sm font-bold px-3 py-1 rounded-full">
+                    <span class="bg-[#F8E8DF] text-[#B86B52] text-xs sm:text-sm font-bold px-3 py-1 rounded-full">
                       已截止報名
                     </span>
                   ) : (
-                    <span class="bg-[#E1E8DD] text-[#52664F] text-xs sm:text-sm font-bold px-3 py-1 rounded-full">
+                    <span class="bg-[#EFE3E2] text-[#8A5F5F] text-xs sm:text-sm font-bold px-3 py-1 rounded-full">
                       報名中
                     </span>
                   )}
                   {event.deadlineDate && (
-                    <span class="text-xs sm:text-sm text-[#737970] font-medium ml-1">
+                    <span class="text-xs sm:text-sm text-[#7A6969] font-medium ml-1">
                       (截止日: {event.deadlineDate})
                     </span>
                   )}
                 </div>
-                <h2 class="text-2xl sm:text-3xl font-bold text-[#30332F]">{event.title}</h2>
+                <h2 class="text-2xl sm:text-3xl font-bold text-[#4A3B3B]">{event.title}</h2>
               </div>
 
               <button 
@@ -988,54 +988,54 @@
                 onClick={onOpenRegister}
                 class={`w-full sm:w-auto px-8 py-3.5 btn-rounded font-bold text-base sm:text-lg shadow-sm transition ${
                   !canRegister 
-                    ? 'bg-[#E5E1D9] text-[#77736A] cursor-not-allowed' 
-                    : 'bg-[#B8794A] hover:bg-[#9F633D] text-[#FFFDF8]'
+                    ? 'bg-[#EBE3E0] text-[#887977] cursor-not-allowed' 
+                    : 'bg-[#C88A75] hover:bg-[#B27763] text-[#FFFDFB]'
                 }`}>
                 {isExpired ? '已結束' : '加入這場逃離'}
               </button>
             </div>
 
-            <p class="text-[#30332F] text-base sm:text-lg leading-relaxed whitespace-pre-line bg-[#F5F1E8] p-4.5 rounded-xl border border-[#DDD8CB]/60">
+            <p class="text-[#4A3B3B] text-base sm:text-lg leading-relaxed whitespace-pre-line bg-[#F9F6F0] p-4.5 rounded-xl border border-[#E8DCD5]/60">
               {event.description || '這是一場規劃中的戶外逃離計畫，一起暫別城市的喧囂吧！'}
             </p>
 
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#EEEADF] p-4 rounded-xl text-sm sm:text-base">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#F2EAE5] p-4 rounded-xl text-sm sm:text-base">
               <div>
-                <span class="text-[#5A5F56] block text-xs sm:text-sm">活動日期</span>
-                <span class="font-bold text-[#B8794A] mt-0.5 block">{event.startDate} ～ {event.endDate}</span>
+                <span class="text-[#7A6969] block text-xs sm:text-sm">活動日期</span>
+                <span class="font-bold text-[#C88A75] mt-0.5 block">{event.startDate} ～ {event.endDate}</span>
               </div>
               <div>
-                <span class="text-[#5A5F56] block text-xs sm:text-sm">目前統計</span>
-                <span class="font-bold text-[#3F5144] mt-0.5 block">{regs.length} 組 ({totalTents} 帳 / {totalPeople} 人)</span>
+                <span class="text-[#7A6969] block text-xs sm:text-sm">目前統計</span>
+                <span class="font-bold text-[#8A5F5F] mt-0.5 block">{regs.length} 組 ({totalTents} 帳 / {totalPeople} 人)</span>
               </div>
               <div>
-                <span class="text-[#5A5F56] block text-xs sm:text-sm">主辦發起人</span>
-                <span class="font-bold text-[#30332F] mt-0.5 block">{event.organizer}</span>
+                <span class="text-[#7A6969] block text-xs sm:text-sm">主辦發起人</span>
+                <span class="font-bold text-[#4A3B3B] mt-0.5 block">{event.organizer}</span>
               </div>
               <div>
-                <span class="text-[#5A5F56] block text-xs sm:text-sm">營地網站 / 導航</span>
+                <span class="text-[#7A6969] block text-xs sm:text-sm">營地網站 / 導航</span>
                 {event.campUrl ? (
-                  <a href={event.campUrl} target="_blank" rel="noopener noreferrer" class="font-bold text-[#3F5144] underline mt-0.5 block truncate">
+                  <a href={event.campUrl} target="_blank" rel="noopener noreferrer" class="font-bold text-[#8A5F5F] underline mt-0.5 block truncate">
                     點此開啟連結 🔗
                   </a>
                 ) : (
-                  <span class="text-[#AAA99F] mt-0.5 block">未提供</span>
+                  <span class="text-[#B8ADA9] mt-0.5 block">未提供</span>
                 )}
               </div>
             </div>
           </div>
 
           {/* 逃離夥伴區域 */}
-          <div class="bg-[#EEEADF] rounded-2xl p-5 sm:p-6 border border-[#DDD8CB] space-y-4">
-            <div class="flex items-center justify-between border-b border-[#DDD8CB] pb-3">
-              <h3 class="text-xl font-bold text-[#3F5144]">
+          <div class="bg-[#F2EAE5] rounded-2xl p-5 sm:p-6 border border-[#E8DCD5] space-y-4">
+            <div class="flex items-center justify-between border-b border-[#E8DCD5] pb-3">
+              <h3 class="text-xl font-bold text-[#8A5F5F]">
                 逃離夥伴 ({regs.length} 組)
               </h3>
-              <span class="text-xs sm:text-sm text-[#5A5F56]">已加入這場逃離的人員名單</span>
+              <span class="text-xs sm:text-sm text-[#7A6969]">已加入這場逃離的人員名單</span>
             </div>
 
             {regs.length === 0 ? (
-              <p class="text-[#5A5F56] text-base py-8 text-center bg-[#FFFDF8] rounded-xl border border-[#DDD8CB]">
+              <p class="text-[#7A6969] text-base py-8 text-center bg-[#FFFDFB] rounded-xl border border-[#E8DCD5]">
                 尚無夥伴加入，點擊「加入這場逃離」成為第一個夥伴吧！
               </p>
             ) : (
@@ -1043,36 +1043,36 @@
                 {regs.map((reg, idx) => {
                   const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
                   return (
-                    <div key={reg.id} class="bg-[#FFFDF8] rounded-xl p-3.5 sm:p-4 border border-[#DDD8CB] shadow-xs flex flex-col justify-between space-y-2.5">
+                    <div key={reg.id} class="bg-[#FFFDFB] rounded-xl p-3.5 sm:p-4 border border-[#E8DCD5] shadow-xs flex flex-col justify-between space-y-2.5">
                       <div class="flex items-center justify-between gap-2">
-                        <div class="font-extrabold text-[#30332F] text-xl sm:text-2xl">{reg.name}</div>
+                        <div class="font-extrabold text-[#4A3B3B] text-xl sm:text-2xl">{reg.name}</div>
                         <div class="flex items-center gap-1.5 shrink-0">
                           {reg.nightArrive && (
                             <span class="text-purple-800 font-bold text-xs sm:text-sm bg-purple-100 px-2 py-0.5 rounded-md">
                               夜衝
                             </span>
                           )}
-                          <span class="bg-[#E1E8DD] text-[#52664F] text-sm sm:text-base font-bold px-3 py-0.5 rounded-full">
+                          <span class="bg-[#EFE3E2] text-[#8A5F5F] text-sm sm:text-base font-bold px-3 py-0.5 rounded-full">
                             {reg.tents || 1} 帳
                           </span>
                         </div>
                       </div>
 
-                      <div class="bg-[#F5F1E8] p-2.5 px-3 rounded-lg text-base space-y-1 text-[#5A5F56]">
+                      <div class="bg-[#F9F6F0] p-2.5 px-3 rounded-lg text-base space-y-1 text-[#7A6969]">
                         <div class="flex items-center justify-between">
-                          <span class="text-base">人數：<b class="text-[#30332F] text-lg sm:text-xl font-bold">{reg.adults}大 {reg.kids}小</b></span>
+                          <span class="text-base">人數：<b class="text-[#4A3B3B] text-lg sm:text-xl font-bold">{reg.adults}大 {reg.kids}小</b></span>
                         </div>
                         {reg.note && (
-                          <div class="text-sm sm:text-base text-[#5A5F56] truncate">備註：{reg.note}</div>
+                          <div class="text-sm sm:text-base text-[#7A6969] truncate">備註：{reg.note}</div>
                         )}
                       </div>
 
                       {/* 若活動過期，不顯示編輯/退出按鈕 */}
                       {!isExpired && (
-                        <div class="pt-1.5 flex items-center justify-end gap-3 border-t border-[#DDD8CB]/80">
+                        <div class="pt-1.5 flex items-center justify-end gap-3 border-t border-[#E8DCD5]/80">
                           <button 
                             onClick={() => onEditReg(reg)}
-                            class="text-base font-bold text-[#5A5F56] hover:text-[#30332F] px-2 py-0.5">
+                            class="text-base font-bold text-[#7A6969] hover:text-[#4A3B3B] px-2 py-0.5">
                             編輯
                           </button>
                           <button 
@@ -1115,22 +1115,22 @@
       };
 
       return (
-        <div class="fixed inset-0 bg-[#30332F]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div class="bg-[#FFFDF8] rounded-2xl max-w-lg w-full p-6 shadow-xl border border-[#DDD8CB] max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div class="flex items-center justify-between border-b border-[#DDD8CB] pb-3">
-              <h3 class="text-lg sm:text-xl font-bold text-[#30332F]">
+        <div class="fixed inset-0 bg-[#4A3B3B]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div class="bg-[#FFFDFB] rounded-2xl max-w-lg w-full p-6 shadow-xl border border-[#E8DCD5] max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div class="flex items-center justify-between border-b border-[#E8DCD5] pb-3">
+              <h3 class="text-lg sm:text-xl font-bold text-[#4A3B3B]">
                 {initialData ? '修改夥伴資料' : '加入這場逃離'}
               </h3>
-              <button onClick={onClose} class="text-[#5A5F56] hover:text-[#30332F] p-1 text-xl">✕</button>
+              <button onClick={onClose} class="text-[#7A6969] hover:text-[#4A3B3B] p-1 text-xl">✕</button>
             </div>
 
-            <p class="text-xs sm:text-sm text-[#52664F] bg-[#E1E8DD] p-3 rounded-lg mt-3 font-bold">
+            <p class="text-xs sm:text-sm text-[#8A5F5F] bg-[#EFE3E2] p-3 rounded-lg mt-3 font-bold">
               計畫：{event.title} ({event.startDate})
             </p>
 
             <form onSubmit={handleSubmit} class="mt-4 space-y-4 text-base">
               <div>
-                <label class="block font-bold text-[#30332F] mb-1">暱稱 / 稱呼 *</label>
+                <label class="block font-bold text-[#4A3B3B] mb-1">暱稱 / 稱呼 *</label>
                 <input 
                   type="text" required
                   placeholder="例: 阿傑"
@@ -1142,7 +1142,7 @@
 
               <div class="grid grid-cols-3 gap-3">
                 <div>
-                  <label class="block font-bold text-[#30332F] mb-1">搭帳數量</label>
+                  <label class="block font-bold text-[#4A3B3B] mb-1">搭帳數量</label>
                   <select 
                     value={formData.tents}
                     onChange={e => setFormData({...formData, tents: Number(e.target.value)})}
@@ -1153,7 +1153,7 @@
                   </select>
                 </div>
                 <div>
-                  <label class="block font-bold text-[#30332F] mb-1">大人人數</label>
+                  <label class="block font-bold text-[#4A3B3B] mb-1">大人人數</label>
                   <input 
                     type="number" min="1" max="10"
                     value={formData.adults}
@@ -1162,7 +1162,7 @@
                   />
                 </div>
                 <div>
-                  <label class="block font-bold text-[#30332F] mb-1">小孩人數</label>
+                  <label class="block font-bold text-[#4A3B3B] mb-1">小孩人數</label>
                   <input 
                     type="number" min="0" max="10"
                     value={formData.kids}
@@ -1172,21 +1172,21 @@
                 </div>
               </div>
 
-              <div class="flex items-center gap-2 bg-[#F5F1E8] p-3 rounded-xl border border-[#DDD8CB]">
+              <div class="flex items-center gap-2 bg-[#F9F6F0] p-3 rounded-xl border border-[#E8DCD5]">
                 <input 
                   type="checkbox" 
                   id="nightArrive"
                   checked={formData.nightArrive}
                   onChange={e => setFormData({...formData, nightArrive: e.target.checked})}
-                  class="w-5 h-5 text-[#3F5144] rounded"
+                  class="w-5 h-5 text-[#8A5F5F] rounded"
                 />
-                <label htmlFor="nightArrive" class="text-sm text-[#30332F] font-bold cursor-pointer">
+                <label htmlFor="nightArrive" class="text-sm text-[#4A3B3B] font-bold cursor-pointer">
                   預計週五「夜衝」(時間依發起人說明)
                 </label>
               </div>
 
               <div>
-                <label class="block font-bold text-[#30332F] mb-1">備註 / 需求說明</label>
+                <label class="block font-bold text-[#4A3B3B] mb-1">備註 / 需求說明</label>
                 <textarea 
                   rows="2"
                   placeholder="例: 攜帶寵物 / 需租借卡式爐"
@@ -1196,9 +1196,9 @@
                 ></textarea>
               </div>
 
-              <div class="flex justify-end gap-3 pt-3 border-t border-[#DDD8CB]">
-                <button type="button" onClick={onClose} class="px-5 py-2.5 text-[#5A5F56] font-bold">取消</button>
-                <button type="submit" class="px-7 py-2.5 bg-[#B8794A] hover:bg-[#9F633D] text-[#FFFDF8] font-bold btn-rounded shadow-sm text-base">
+              <div class="flex justify-end gap-3 pt-3 border-t border-[#E8DCD5]">
+                <button type="button" onClick={onClose} class="px-5 py-2.5 text-[#7A6969] font-bold">取消</button>
+                <button type="submit" class="px-7 py-2.5 bg-[#C88A75] hover:bg-[#B27763] text-[#FFFDFB] font-bold btn-rounded shadow-sm text-base">
                   {initialData ? '儲存修改' : '確認加入逃離'}
                 </button>
               </div>
@@ -1234,16 +1234,16 @@
       };
 
       return (
-        <div class="fixed inset-0 bg-[#30332F]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div class="bg-[#FFFDF8] rounded-2xl max-w-xl w-full p-6 shadow-xl border border-[#DDD8CB] max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div class="flex items-center justify-between border-b border-[#DDD8CB] pb-3">
-              <h3 class="text-lg sm:text-xl font-bold text-[#30332F]">{title}</h3>
-              <button onClick={onClose} class="text-[#5A5F56] hover:text-[#30332F] p-1 text-xl">✕</button>
+        <div class="fixed inset-0 bg-[#4A3B3B]/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div class="bg-[#FFFDFB] rounded-2xl max-w-xl w-full p-6 shadow-xl border border-[#E8DCD5] max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div class="flex items-center justify-between border-b border-[#E8DCD5] pb-3">
+              <h3 class="text-lg sm:text-xl font-bold text-[#4A3B3B]">{title}</h3>
+              <button onClick={onClose} class="text-[#7A6969] hover:text-[#4A3B3B] p-1 text-xl">✕</button>
             </div>
 
             <form onSubmit={handleSubmit} class="mt-4 space-y-4 text-base">
               <div>
-                <label class="block font-bold text-[#30332F] mb-1">逃離計畫名稱 *</label>
+                <label class="block font-bold text-[#4A3B3B] mb-1">逃離計畫名稱 *</label>
                 <input 
                   type="text" required
                   placeholder="例: 南投山裡兩天一夜"
@@ -1255,7 +1255,7 @@
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label class="block font-bold text-[#30332F] mb-1">逃離地點 (縣市/鄉鎮) *</label>
+                  <label class="block font-bold text-[#4A3B3B] mb-1">逃離地點 (縣市/鄉鎮) *</label>
                   <input 
                     type="text" required
                     placeholder="例: 埔里 / 尖石"
@@ -1265,7 +1265,7 @@
                   />
                 </div>
                 <div>
-                  <label class="block font-bold text-[#30332F] mb-1">發起人暱稱 *</label>
+                  <label class="block font-bold text-[#4A3B3B] mb-1">發起人暱稱 *</label>
                   <input 
                     type="text" required
                     placeholder="例: 大熊"
@@ -1278,7 +1278,7 @@
 
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label class="block font-bold text-[#30332F] mb-1">開始日期 *</label>
+                  <label class="block font-bold text-[#4A3B3B] mb-1">開始日期 *</label>
                   <input 
                     type="date" required
                     value={formData.startDate}
@@ -1287,7 +1287,7 @@
                   />
                 </div>
                 <div>
-                  <label class="block font-bold text-[#30332F] mb-1">結束日期 *</label>
+                  <label class="block font-bold text-[#4A3B3B] mb-1">結束日期 *</label>
                   <input 
                     type="date" required
                     value={formData.endDate}
@@ -1296,7 +1296,7 @@
                   />
                 </div>
                 <div>
-                  <label class="block font-bold text-[#B8794A] mb-1">報名截止日</label>
+                  <label class="block font-bold text-[#C88A75] mb-1">報名截止日</label>
                   <input 
                     type="date"
                     value={formData.deadlineDate}
@@ -1307,7 +1307,7 @@
               </div>
 
               <div>
-                <label class="block font-bold text-[#30332F] mb-1">營地連結網址 (選填)</label>
+                <label class="block font-bold text-[#4A3B3B] mb-1">營地連結網址 (選填)</label>
                 <input 
                   type="url"
                   placeholder="https://..."
@@ -1318,7 +1318,7 @@
               </div>
 
               <div>
-                <label class="block font-bold text-[#30332F] mb-1">計畫簡介與裝備提醒</label>
+                <label class="block font-bold text-[#4A3B3B] mb-1">計畫簡介與裝備提醒</label>
                 <textarea 
                   rows="3"
                   placeholder="介紹營地特色、注意事項、伙食規劃..."
@@ -1328,9 +1328,9 @@
                 ></textarea>
               </div>
 
-              <div class="flex justify-end gap-3 pt-3 border-t border-[#DDD8CB]">
-                <button type="button" onClick={onClose} class="px-5 py-2.5 text-[#5A5F56] font-bold">取消</button>
-                <button type="submit" class="px-7 py-2.5 bg-[#3F5144] hover:bg-[#2F3D33] active:bg-[#26332A] text-[#FFFDF8] font-bold btn-rounded shadow-sm text-base">
+              <div class="flex justify-end gap-3 pt-3 border-t border-[#E8DCD5]">
+                <button type="button" onClick={onClose} class="px-5 py-2.5 text-[#7A6969] font-bold">取消</button>
+                <button type="submit" class="px-7 py-2.5 bg-[#C88A75] hover:bg-[#B27763] text-[#FFFDFB] font-bold btn-rounded shadow-sm text-base">
                   {initialData ? '儲存修改' : '發起揪團計畫'}
                 </button>
               </div>

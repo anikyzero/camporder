@@ -182,10 +182,13 @@
       }, []);
 
       const filteredEvents = useMemo(() => {
+        const term = searchTerm.toLowerCase().trim();
+        if (!term) return events;
         return events.filter(e => 
-          (e.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (e.location || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (e.organizer || '').toLowerCase().includes(searchTerm.toLowerCase())
+          (e.title || '').toLowerCase().includes(term) ||
+          (e.location || '').toLowerCase().includes(term) ||
+          (e.organizer || '').toLowerCase().includes(term) ||
+          (e.registrations || []).some(r => (r.name || '').toLowerCase().includes(term))
         );
       }, [events, searchTerm]);
 
@@ -426,7 +429,7 @@
                   <div class="relative w-full sm:w-80">
                     <input 
                       type="text"
-                      placeholder="搜尋地點、營地或發起人..."
+                      placeholder="搜尋地點、營地、發起人或逃離夥伴..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       class="w-full px-4 py-2.5 input-outdoor text-base"
@@ -504,91 +507,133 @@
     // 2. 拿掉發起人電話
     // 3. 活動排序：按活動日期 最慢/最晚的依次排序 (已在 loadEventsFromSupabase 做降序排序)
     // ----------------------------------------------------
+    function EventCard({ evt, isExpired, onSelectEvent }) {
+      const regs = evt.registrations || [];
+      const totalPeople = regs.reduce((sum, r) => sum + Number(r.adults || 0) + Number(r.kids || 0), 0);
+      const totalTents = regs.reduce((sum, r) => sum + Number(r.tents || 1), 0);
+
+      return (
+        <div 
+          onClick={() => onSelectEvent(evt)}
+          class={`p-5 sm:p-6 flex flex-col justify-between cursor-pointer group space-y-4 rounded-2xl border transition transform hover:-translate-y-0.5 ${
+            isExpired 
+              ? 'bg-[#EEEADF] border-[#DDD8CB] opacity-90 hover:border-[#B8BDAF]' 
+              : 'card-outdoor'
+          }`}>
+          
+          <div>
+            {/* 1. 卡片頂部：活動日期區塊與「已結束」標籤 */}
+            <div class="border-b border-[#DDD8CB]/60 pb-3 mb-3">
+              <div class="flex items-center justify-between gap-2 mb-1">
+                <span class="text-xs sm:text-sm font-bold text-[#5A5F56]">活動日期</span>
+                {isExpired && (
+                  <span class="bg-[#E5E1D9] text-[#77736A] px-3 py-0.5 rounded-full text-xs font-bold shrink-0">
+                    已結束
+                  </span>
+                )}
+              </div>
+              <div class={`font-bold text-base sm:text-lg ${isExpired ? 'text-[#737970]' : 'text-[#B8794A]'}`}>
+                {evt.startDate} ～ {evt.endDate}
+              </div>
+            </div>
+
+            {/* 2. 中間活動大標題 */}
+            <h3 class={`font-bold text-xl sm:text-2xl transition line-clamp-1 mb-4 ${isExpired ? 'text-[#5A5F56]' : 'text-[#30332F] group-hover:text-[#3F5144]'}`}>
+              {evt.title}
+            </h3>
+
+            {/* 3. 條列屬性 */}
+            <div class="space-y-2.5 text-sm sm:text-base">
+              {/* 地點 */}
+              <div class="flex items-center justify-between py-1 border-b border-dashed border-[#DDD8CB]/40">
+                <span class="text-[#5A5F56] font-medium">逃離地點</span>
+                <span class="font-bold text-[#30332F] text-base sm:text-lg">{evt.location}</span>
+              </div>
+
+              {/* 報名截止 */}
+              <div class="flex items-center justify-between py-1 border-b border-dashed border-[#DDD8CB]/40">
+                <span class="text-[#5A5F56] font-medium">報名截止</span>
+                <span class={`font-bold text-base sm:text-lg ${isExpired ? 'text-[#737970]' : 'text-[#B8794A]'}`}>
+                  {evt.deadlineDate || '無期限'}
+                </span>
+              </div>
+
+              {/* 發起人 */}
+              <div class="flex items-center justify-between py-1 border-b border-dashed border-[#DDD8CB]/40">
+                <span class="text-[#5A5F56] font-medium">發起人</span>
+                <span class="font-bold text-[#30332F] text-base sm:text-lg">{evt.organizer}</span>
+              </div>
+
+              {/* 目前夥伴 */}
+              <div class="flex items-center justify-between py-1">
+                <span class="text-[#5A5F56] font-medium">目前夥伴</span>
+                <span class={`font-bold text-base sm:text-lg ${isExpired ? 'text-[#737970]' : 'text-[#3F5144]'}`}>
+                  {regs.length} 組 ({totalTents} 帳 / {totalPeople} 人)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. 底部引導 */}
+          <div class="pt-4 border-t border-[#DDD8CB] flex items-center justify-between text-[#5A5F56]">
+            <span class="text-sm font-medium">{isExpired ? '點擊查看歷史紀錄' : '點擊查看詳情與報名'}</span>
+            <span class="text-base font-bold text-[#3F5144] group-hover:translate-x-1 transition">➔</span>
+          </div>
+        </div>
+      );
+    }
+
     function EventListView({ events, onSelectEvent }) {
       if (events.length === 0) {
         return (
           <div class="text-center py-16 bg-[#FFFDF8] rounded-2xl border border-dashed border-[#DDD8CB]">
-            <h3 class="text-xl font-bold text-[#30332F]">目前沒有規劃中的逃離計畫</h3>
-            <p class="text-[#5A5F56] text-base mt-2">點擊右上角「發起揪團計畫」，揪朋友一起去戶外吧！</p>
+            <h3 class="text-xl font-bold text-[#30332F]">沒有找到相關的逃離計畫</h3>
+            <p class="text-[#5A5F56] text-base mt-2">請嘗試搜尋其他地點、發起人或夥伴名字！</p>
           </div>
         );
       }
 
       const todayStr = new Date().toISOString().split('T')[0];
 
+      const activeEvents = events.filter(evt => {
+        const checkDate = evt.endDate || evt.startDate;
+        return !checkDate || checkDate >= todayStr;
+      });
+
+      const expiredEvents = events.filter(evt => {
+        const checkDate = evt.endDate || evt.startDate;
+        return checkDate && checkDate < todayStr;
+      });
+
       return (
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {events.map(evt => {
-            const regs = evt.registrations || [];
-            const totalPeople = regs.reduce((sum, r) => sum + Number(r.adults || 0) + Number(r.kids || 0), 0);
-            const totalTents = regs.reduce((sum, r) => sum + Number(r.tents || 1), 0);
+        <div class="space-y-10">
+          {/* 進行中 / 尚未開始的逃離計畫 */}
+          {activeEvents.length > 0 && (
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {activeEvents.map(evt => (
+                <EventCard key={evt.id} evt={evt} isExpired={false} onSelectEvent={onSelectEvent} />
+              ))}
+            </div>
+          )}
 
-            // 判斷活動是否已結束 (以結束日期 endDate 或 截止日 deadlineDate 為準)
-            const isExpired = (evt.endDate && evt.endDate < todayStr) || (evt.deadlineDate && evt.deadlineDate < todayStr);
-
-            return (
-              <div 
-                key={evt.id} 
-                onClick={() => onSelectEvent(evt)}
-                class="card-outdoor p-5 sm:p-6 flex flex-col justify-between cursor-pointer group space-y-4">
-                
-                <div>
-                  {/* 1. 卡片頂部：活動日期區塊與「已結束」標籤 (拿掉「尚有名額」) */}
-                  <div class="border-b border-[#DDD8CB]/60 pb-3 mb-3">
-                    <div class="flex items-center justify-between gap-2 mb-1">
-                      <span class="text-xs sm:text-sm font-bold text-[#5A5F56]">活動日期</span>
-                      {isExpired && (
-                        <span class="bg-[#E5E1D9] text-[#77736A] px-3 py-0.5 rounded-full text-xs font-bold shrink-0">
-                          已結束
-                        </span>
-                      )}
-                    </div>
-                    <div class="font-bold text-[#B8794A] text-base sm:text-lg">
-                      {evt.startDate} ～ {evt.endDate}
-                    </div>
-                  </div>
-
-                  {/* 2. 中間活動大標題 */}
-                  <h3 class="font-bold text-[#30332F] text-xl sm:text-2xl group-hover:text-[#3F5144] transition line-clamp-1 mb-4">
-                    {evt.title}
-                  </h3>
-
-                  {/* 3. 條列屬性 */}
-                  <div class="space-y-2.5 text-sm sm:text-base">
-                    {/* 地點 */}
-                    <div class="flex items-center justify-between py-1 border-b border-dashed border-[#DDD8CB]/40">
-                      <span class="text-[#5A5F56] font-medium">逃離地點</span>
-                      <span class="font-bold text-[#30332F] text-base sm:text-lg">{evt.location}</span>
-                    </div>
-
-                    {/* 報名截止 */}
-                    <div class="flex items-center justify-between py-1 border-b border-dashed border-[#DDD8CB]/40">
-                      <span class="text-[#5A5F56] font-medium">報名截止</span>
-                      <span class="font-bold text-[#B8794A] text-base sm:text-lg">{evt.deadlineDate || '無期限'}</span>
-                    </div>
-
-                    {/* 發起人 */}
-                    <div class="flex items-center justify-between py-1 border-b border-dashed border-[#DDD8CB]/40">
-                      <span class="text-[#5A5F56] font-medium">發起人</span>
-                      <span class="font-bold text-[#30332F] text-base sm:text-lg">{evt.organizer}</span>
-                    </div>
-
-                    {/* 目前夥伴 */}
-                    <div class="flex items-center justify-between py-1">
-                      <span class="text-[#5A5F56] font-medium">目前夥伴</span>
-                      <span class="font-bold text-[#3F5144] text-base sm:text-lg">{regs.length} 組 ({totalTents} 帳 / {totalPeople} 人)</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4. 底部引導 */}
-                <div class="pt-4 border-t border-[#DDD8CB] flex items-center justify-between text-[#5A5F56]">
-                  <span class="text-sm font-medium">點擊查看詳情與報名</span>
-                  <span class="text-base font-bold text-[#3F5144] group-hover:translate-x-1 transition">➔</span>
-                </div>
+          {/* 已結束的活動分隔線與卡片區 */}
+          {expiredEvents.length > 0 && (
+            <div class="space-y-6">
+              <div class="relative flex py-4 items-center">
+                <div class="flex-grow border-t border-[#DDD8CB]"></div>
+                <span class="flex-shrink mx-4 px-4 py-1.5 bg-[#EEEADF] text-[#737970] rounded-full text-sm font-bold border border-[#DDD8CB] shadow-xs">
+                  以下為已結束的逃離計畫
+                </span>
+                <div class="flex-grow border-t border-[#DDD8CB]"></div>
               </div>
-            );
-          })}
+
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {expiredEvents.map(evt => (
+                  <EventCard key={evt.id} evt={evt} isExpired={true} onSelectEvent={onSelectEvent} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       );
     }

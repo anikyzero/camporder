@@ -542,23 +542,25 @@
             ) : (
               <div>
                 {/* 📢 逃離基地公告區 */}
-                <div class="mb-6 bg-[#FFFDF8] p-4.5 sm:p-5 rounded-2xl border border-[#DDD8CB] shadow-xs">
-                  <div class="flex items-center justify-between border-b border-[#DDD8CB]/60 pb-2 mb-2">
+                <div class="mb-6 bg-[#FFFDF8] p-4 sm:p-5 rounded-2xl border border-[#DDD8CB] shadow-xs overflow-hidden">
+                  <div class="flex items-center justify-between border-b border-[#DDD8CB]/60 pb-2.5 mb-2.5">
                     <h3 class="font-bold text-[#3F5144] text-base sm:text-lg flex items-center gap-2">
                       <span>📢</span> 逃離基地公告
                     </h3>
                     <button 
                       onClick={handleOpenNoticeEdit}
-                      class="text-xs sm:text-sm font-bold text-[#B8794A] hover:text-[#9F633D] px-3 py-1 rounded-lg bg-[#F0DED0]/60 hover:bg-[#F0DED0] transition border border-[#9A5E3D]/20">
+                      class="text-xs sm:text-sm font-bold text-[#B8794A] hover:text-[#9F633D] px-3 py-1 rounded-lg bg-[#F0DED0]/60 hover:bg-[#F0DED0] transition border border-[#9A5E3D]/20 shrink-0">
                       編輯公告
                     </button>
                   </div>
-                  <p class="text-[#30332F] text-base sm:text-lg leading-relaxed whitespace-pre-line font-medium">
-                    {noticeText}
-                  </p>
+                  <div class="px-1 py-0.5">
+                    <p class="text-[#30332F] text-base sm:text-lg leading-relaxed whitespace-pre-line font-medium break-words">
+                      {noticeText}
+                    </p>
+                  </div>
                 </div>
 
-                <div class="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#FFFDF8] p-4.5 rounded-2xl border border-[#DDD8CB] shadow-xs">
+                <div class="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#FFFDF8] p-4 sm:p-4.5 rounded-2xl border border-[#DDD8CB] shadow-xs overflow-hidden">
                   <div class="relative w-full sm:w-80">
                     <input 
                       type="text"
@@ -569,7 +571,7 @@
                     />
                   </div>
 
-                  <div class="text-sm sm:text-base text-[#5A5F56] font-medium self-end sm:self-center">
+                  <div class="text-sm sm:text-base text-[#5A5F56] font-medium text-left sm:text-right w-full sm:w-auto">
                     目前共有 <span class="text-[#30332F] font-bold text-lg sm:text-xl">{filteredEvents.length}</span> 場逃離計畫 
                     （<span class="text-[#3F5144] font-bold">{activeCount}</span> 場進行中 / <span class="text-[#737970] font-bold">{expiredCount}</span> 場已結束）
                   </div>
@@ -699,67 +701,67 @@
       return (
         <div 
           onClick={() => onSelectEvent(evt)}
-          class={`p-4 sm:p-5.5 flex flex-col justify-between cursor-pointer group space-y-3 rounded-2xl border transition transform hover:-translate-y-0.5 ${
+          class={`p-4 sm:p-5 flex flex-col justify-between cursor-pointer group space-y-2.5 rounded-2xl border transition transform hover:-translate-y-0.5 ${
             isExpired 
               ? 'bg-[#EEEADF] border-[#DDD8CB] opacity-90 hover:border-[#B8BDAF]' 
               : 'card-outdoor'
           }`}>
           
           <div>
-            {/* 1. 卡片頂部：活動日期區塊與狀態標籤 (已結束 / 已截止報名 / 報名中) */}
-            <div class="border-b border-[#DDD8CB]/60 pb-2.5 mb-2.5">
-              <div class="flex items-center justify-between gap-2 mb-1">
-                <span class="text-xs sm:text-sm font-bold text-[#5A5F56]">活動日期</span>
+            {/* 1. 卡片頂部：活動日期區塊與狀態標籤 */}
+            <div class="border-b border-[#DDD8CB]/60 pb-2 mb-2">
+              <div class="flex items-center justify-between gap-2 mb-0.5">
+                <span class="text-sm font-bold text-[#5A5F56]">活動日期</span>
                 {isExpired ? (
-                  <span class="bg-[#E5E1D9] text-[#77736A] px-2.5 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0">
+                  <span class="bg-[#E5E1D9] text-[#77736A] px-3 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0">
                     已結束
                   </span>
                 ) : isDeadlinePassed ? (
-                  <span class="bg-[#F0DED0] text-[#9A5E3D] px-2.5 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0">
+                  <span class="bg-[#F0DED0] text-[#9A5E3D] px-3 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0">
                     已截止報名
                   </span>
                 ) : (
-                  <span class="bg-[#E1E8DD] text-[#52664F] px-2.5 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0">
+                  <span class="bg-[#E1E8DD] text-[#52664F] px-3 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0">
                     報名中
                   </span>
                 )}
               </div>
-              <div class={`font-bold text-base sm:text-lg ${isExpired ? 'text-[#737970]' : 'text-[#B8794A]'}`}>
+              <div class={`font-bold text-lg sm:text-xl ${isExpired ? 'text-[#737970]' : 'text-[#B8794A]'}`}>
                 {evt.startDate} ～ {evt.endDate}
               </div>
             </div>
 
             {/* 2. 中間活動大標題 */}
-            <h3 class={`font-extrabold text-xl sm:text-2xl transition line-clamp-1 mb-3 ${isExpired ? 'text-[#5A5F56]' : 'text-[#30332F] group-hover:text-[#3F5144]'}`}>
+            <h3 class={`font-extrabold text-2xl sm:text-3xl transition line-clamp-1 mb-2.5 ${isExpired ? 'text-[#5A5F56]' : 'text-[#30332F] group-hover:text-[#3F5144]'}`}>
               {evt.title}
             </h3>
 
             {/* 3. 條列屬性 */}
-            <div class="space-y-1.5 text-sm sm:text-base">
+            <div class="space-y-1 text-base sm:text-lg">
               {/* 地點 */}
-              <div class="flex items-center justify-between py-1 border-b border-dashed border-[#DDD8CB]/40 gap-2">
+              <div class="flex items-center justify-between py-0.5 border-b border-dashed border-[#DDD8CB]/40 gap-2">
                 <span class="text-[#5A5F56] font-medium shrink-0">逃離地點</span>
-                <span class="font-bold text-[#30332F] text-base sm:text-lg text-right truncate">{evt.location}</span>
+                <span class="font-bold text-[#30332F] text-lg sm:text-xl text-right truncate">{evt.location}</span>
               </div>
 
               {/* 報名截止 */}
-              <div class="flex items-center justify-between py-1 border-b border-dashed border-[#DDD8CB]/40 gap-2">
+              <div class="flex items-center justify-between py-0.5 border-b border-dashed border-[#DDD8CB]/40 gap-2">
                 <span class="text-[#5A5F56] font-medium shrink-0">報名截止</span>
-                <span class={`font-bold text-base sm:text-lg text-right shrink-0 ${isExpired ? 'text-[#737970]' : 'text-[#B8794A]'}`}>
+                <span class={`font-bold text-lg sm:text-xl text-right shrink-0 ${isExpired ? 'text-[#737970]' : 'text-[#B8794A]'}`}>
                   {evt.deadlineDate || '無期限'}
                 </span>
               </div>
 
               {/* 發起人 */}
-              <div class="flex items-center justify-between py-1 border-b border-dashed border-[#DDD8CB]/40 gap-2">
+              <div class="flex items-center justify-between py-0.5 border-b border-dashed border-[#DDD8CB]/40 gap-2">
                 <span class="text-[#5A5F56] font-medium shrink-0">發起人</span>
-                <span class="font-bold text-[#30332F] text-base sm:text-lg text-right truncate">{evt.organizer}</span>
+                <span class="font-bold text-[#30332F] text-lg sm:text-xl text-right truncate">{evt.organizer}</span>
               </div>
 
               {/* 目前夥伴 */}
-              <div class="flex items-center justify-between py-1 gap-2">
+              <div class="flex items-center justify-between py-0.5 gap-2">
                 <span class="text-[#5A5F56] font-medium shrink-0">目前夥伴</span>
-                <span class={`font-bold text-base sm:text-lg text-right shrink-0 ${isExpired ? 'text-[#737970]' : 'text-[#3F5144]'}`}>
+                <span class={`font-bold text-lg sm:text-xl text-right shrink-0 ${isExpired ? 'text-[#737970]' : 'text-[#3F5144]'}`}>
                   {regs.length} 組 ({totalTents} 帳 / {totalPeople} 人)
                 </span>
               </div>
@@ -767,9 +769,9 @@
           </div>
 
           {/* 4. 底部引導 */}
-          <div class="pt-2.5 border-t border-[#DDD8CB] flex items-center justify-between text-[#5A5F56]">
-            <span class="text-xs sm:text-sm font-medium">{isExpired ? '點擊查看歷史紀錄' : '點擊查看詳情與報名'}</span>
-            <span class="text-base font-bold text-[#3F5144] group-hover:translate-x-1 transition">➔</span>
+          <div class="pt-2 border-t border-[#DDD8CB] flex items-center justify-between text-[#5A5F56]">
+            <span class="text-base font-medium">{isExpired ? '點擊查看歷史紀錄' : '點擊查看詳情與報名'}</span>
+            <span class="text-lg font-bold text-[#3F5144] group-hover:translate-x-1 transition">➔</span>
           </div>
         </div>
       );

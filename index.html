@@ -694,7 +694,7 @@
       const totalTents = regs.reduce((sum, r) => sum + Number(r.tents || 1), 0);
 
       const todayStr = new Date().toISOString().split('T')[0];
-      const isRegistrationClosed = isExpired || (evt.deadlineDate && evt.deadlineDate < todayStr);
+      const isDeadlinePassed = !isExpired && Boolean(evt.deadlineDate && evt.deadlineDate < todayStr);
 
       return (
         <div 
@@ -706,12 +706,16 @@
           }`}>
           
           <div>
-            {/* 1. 卡片頂部：活動日期區塊與「已截止報名 / 報名中」標籤 */}
+            {/* 1. 卡片頂部：活動日期區塊與狀態標籤 (已結束 / 已截止報名 / 報名中) */}
             <div class="border-b border-[#DDD8CB]/60 pb-3 mb-3">
               <div class="flex items-center justify-between gap-2 mb-1">
                 <span class="text-xs sm:text-sm font-bold text-[#5A5F56]">活動日期</span>
-                {isRegistrationClosed ? (
+                {isExpired ? (
                   <span class="bg-[#E5E1D9] text-[#77736A] px-3 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0">
+                    已結束
+                  </span>
+                ) : isDeadlinePassed ? (
+                  <span class="bg-[#F0DED0] text-[#9A5E3D] px-3 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0">
                     已截止報名
                   </span>
                 ) : (
@@ -915,7 +919,10 @@
       const totalPeople = totalAdults + totalKids;
 
       const todayStr = new Date().toISOString().split('T')[0];
-      const isExpired = (event.endDate && event.endDate < todayStr) || (event.deadlineDate && event.deadlineDate < todayStr);
+      const checkDate = event.endDate || event.startDate;
+      const isExpired = Boolean(checkDate && checkDate < todayStr);
+      const isDeadlinePassed = !isExpired && Boolean(event.deadlineDate && event.deadlineDate < todayStr);
+      const canRegister = !isExpired && !isDeadlinePassed;
 
       return (
         <div class="space-y-6">
@@ -947,7 +954,7 @@
           <div class="bg-[#FFFDF8] rounded-2xl p-5 sm:p-7 border border-[#DDD8CB] shadow-xs space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start gap-4 border-b border-[#DDD8CB] pb-4">
               <div>
-                <div class="flex items-center gap-2 mb-2">
+                <div class="flex items-center gap-2 mb-2 flex-wrap">
                   <span class="bg-[#E1E8DD] text-[#52664F] text-xs sm:text-sm font-bold px-3 py-1 rounded-full">
                     地點：{event.location}
                   </span>
@@ -955,26 +962,33 @@
                     <span class="bg-[#E5E1D9] text-[#77736A] text-xs sm:text-sm font-bold px-3 py-1 rounded-full">
                       已結束
                     </span>
+                  ) : isDeadlinePassed ? (
+                    <span class="bg-[#F0DED0] text-[#9A5E3D] text-xs sm:text-sm font-bold px-3 py-1 rounded-full">
+                      已截止報名
+                    </span>
                   ) : (
-                    event.deadlineDate && (
-                      <span class="bg-[#F0DED0] text-[#9A5E3D] text-xs sm:text-sm font-bold px-3 py-1 rounded-full">
-                        報名截止：{event.deadlineDate}
-                      </span>
-                    )
+                    <span class="bg-[#E1E8DD] text-[#52664F] text-xs sm:text-sm font-bold px-3 py-1 rounded-full">
+                      報名中
+                    </span>
+                  )}
+                  {event.deadlineDate && (
+                    <span class="text-xs sm:text-sm text-[#737970] font-medium ml-1">
+                      (截止日: {event.deadlineDate})
+                    </span>
                   )}
                 </div>
                 <h2 class="text-2xl sm:text-3xl font-bold text-[#30332F]">{event.title}</h2>
               </div>
 
               <button 
-                disabled={isExpired}
+                disabled={!canRegister}
                 onClick={onOpenRegister}
                 class={`w-full sm:w-auto px-8 py-3.5 btn-rounded font-bold text-base sm:text-lg shadow-sm transition ${
-                  isExpired 
+                  !canRegister 
                     ? 'bg-[#E5E1D9] text-[#77736A] cursor-not-allowed' 
                     : 'bg-[#B8794A] hover:bg-[#9F633D] text-[#FFFDF8]'
                 }`}>
-                {isExpired ? '已結束' : '加入這場逃離'}
+                {isExpired ? '已結束' : isDeadlinePassed ? '已截止報名' : '加入這場逃離'}
               </button>
             </div>
 

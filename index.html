@@ -304,7 +304,10 @@
           const checkDate = e.startDate;
           return checkDate && checkDate < todayStr;
         }).length;
-      }, [filteredEvents, todayStr]);
+      const handleSelectEvent = (evt) => {
+        setSelectedEvent(evt);
+        window.scrollTo(0, 0);
+      };
 
       const handleRegisterSubmit = async (eventId, regData) => {
         const newReg = { 
@@ -583,9 +586,9 @@
                   </div>
                 ) : (
                   currentView === 'list' ? (
-                    <EventListView events={filteredEvents} onSelectEvent={setSelectedEvent} />
+                    <EventListView events={filteredEvents} onSelectEvent={handleSelectEvent} />
                   ) : (
-                    <CalendarView events={events} onSelectEvent={setSelectedEvent} />
+                    <CalendarView events={events} onSelectEvent={handleSelectEvent} />
                   )
                 )}
               </div>

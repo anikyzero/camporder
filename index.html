@@ -304,6 +304,8 @@
           const checkDate = e.startDate;
           return checkDate && checkDate < todayStr;
         }).length;
+      }, [filteredEvents, todayStr]);
+
       const handleSelectEvent = (evt) => {
         setSelectedEvent(evt);
         window.scrollTo(0, 0);

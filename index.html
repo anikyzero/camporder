@@ -290,18 +290,18 @@
         );
       }, [events, searchTerm]);
 
-      const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+      const todayStr = useMemo(() => new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0], []);
 
       const activeCount = useMemo(() => {
         return filteredEvents.filter(e => {
-          const checkDate = e.endDate || e.startDate;
+          const checkDate = e.startDate;
           return !checkDate || checkDate >= todayStr;
         }).length;
       }, [filteredEvents, todayStr]);
 
       const expiredCount = useMemo(() => {
         return filteredEvents.filter(e => {
-          const checkDate = e.endDate || e.startDate;
+          const checkDate = e.startDate;
           return checkDate && checkDate < todayStr;
         }).length;
       }, [filteredEvents, todayStr]);
@@ -693,7 +693,7 @@
       const totalPeople = regs.reduce((sum, r) => sum + Number(r.adults || 0) + Number(r.kids || 0), 0);
       const totalTents = regs.reduce((sum, r) => sum + Number(r.tents || 1), 0);
 
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
       const isDeadlinePassed = !isExpired && Boolean(evt.deadlineDate && evt.deadlineDate < todayStr);
 
       return (
@@ -785,15 +785,15 @@
         );
       }
 
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
 
       const activeEvents = events.filter(evt => {
-        const checkDate = evt.endDate || evt.startDate;
+        const checkDate = evt.startDate;
         return !checkDate || checkDate >= todayStr;
       });
 
       const expiredEvents = events.filter(evt => {
-        const checkDate = evt.endDate || evt.startDate;
+        const checkDate = evt.startDate;
         return checkDate && checkDate < todayStr;
       });
 
@@ -918,8 +918,8 @@
       const totalKids = regs.reduce((sum, r) => sum + Number(r.kids || 0), 0);
       const totalPeople = totalAdults + totalKids;
 
-      const todayStr = new Date().toISOString().split('T')[0];
-      const checkDate = event.endDate || event.startDate;
+      const todayStr = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000).toISOString().split('T')[0];
+      const checkDate = event.startDate;
       const isExpired = Boolean(checkDate && checkDate < todayStr);
       const isDeadlinePassed = !isExpired && Boolean(event.deadlineDate && event.deadlineDate < todayStr);
       const canRegister = !isExpired && !isDeadlinePassed;

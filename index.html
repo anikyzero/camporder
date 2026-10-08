@@ -1043,7 +1043,7 @@
                 {regs.map((reg, idx) => {
                   const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
                   return (
-                    <div key={reg.id} class="bg-[#FFFDFB] rounded-xl p-3.5 sm:p-4 border border-[#E8DCD5] shadow-xs flex flex-col justify-between space-y-2.5">
+                    <div key={reg.id} class="bg-[#FFFDFB] rounded-xl p-2.5 sm:p-3 border border-[#E8DCD5] shadow-xs flex flex-col justify-between space-y-1.5">
                       <div class="flex items-center justify-between gap-2">
                         <div class="font-extrabold text-[#4A3B3B] text-xl sm:text-2xl">{reg.name}</div>
                         <div class="flex items-center gap-1.5 shrink-0">
@@ -1052,13 +1052,13 @@
                               夜衝
                             </span>
                           )}
-                          <span class="bg-[#EFE3E2] text-[#8A5F5F] text-sm sm:text-base font-bold px-3 py-0.5 rounded-full">
+                          <span class="bg-[#EFE3E2] text-[#8A5F5F] text-sm sm:text-base font-bold px-2.5 py-0.5 rounded-full">
                             {reg.tents || 1} 帳
                           </span>
                         </div>
                       </div>
 
-                      <div class="bg-[#F9F6F0] p-2.5 px-3 rounded-lg text-base space-y-1 text-[#7A6969]">
+                      <div class="bg-[#F9F6F0] p-1.5 px-2.5 rounded-lg text-base space-y-0.5 text-[#7A6969]">
                         <div class="flex items-center justify-between">
                           <span class="text-base">人數：<b class="text-[#4A3B3B] text-lg sm:text-xl font-bold">{reg.adults}大 {reg.kids}小</b></span>
                         </div>
@@ -1069,15 +1069,15 @@
 
                       {/* 若活動過期，不顯示編輯/退出按鈕 */}
                       {!isExpired && (
-                        <div class="pt-1.5 flex items-center justify-end gap-3 border-t border-[#E8DCD5]/80">
+                        <div class="pt-1 flex items-center justify-end gap-3 border-t border-[#E8DCD5]/80">
                           <button 
                             onClick={() => onEditReg(reg)}
-                            class="text-base font-bold text-[#7A6969] hover:text-[#4A3B3B] px-2 py-0.5">
+                            class="text-base font-bold text-[#7A6969] hover:text-[#4A3B3B] px-2 py-0">
                             編輯
                           </button>
                           <button 
                             onClick={() => onCancelReg(event.id, reg.id)}
-                            class="text-base font-bold text-rose-600 hover:text-rose-800 px-2 py-0.5">
+                            class="text-base font-bold text-rose-600 hover:text-rose-800 px-2 py-0">
                             退出
                           </button>
                         </div>

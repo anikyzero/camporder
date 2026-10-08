@@ -323,12 +323,12 @@
         setShowRegisterModal(false);
 
         try {
-          setSyncStatus('正在將您加入逃離名單...');
+          setSyncStatus('正在辦理活動報名...');
           const { error } = await supabase.from('registrations').insert([newReg]);
           if (error) throw error;
 
-          setSyncStatus('成功加入這場逃離！');
-          alert('成功加入這場逃離！一起準備出發吧～');
+          setSyncStatus('成功報名這場活動！');
+          alert('成功報名這場活動！一起準備出發吧～');
           loadEventsFromSupabase();
         } catch (err) {
           console.error("Register submit error:", err);
@@ -991,7 +991,7 @@
                     ? 'bg-[#EBE3E0] text-[#887977] cursor-not-allowed' 
                     : 'bg-[#C88A75] hover:bg-[#B27763] text-[#FFFDFB]'
                 }`}>
-                {isExpired ? '已結束' : '加入這場逃離'}
+                {isExpired ? '已結束' : '報名這場活動'}
               </button>
             </div>
 
@@ -1036,7 +1036,7 @@
 
             {regs.length === 0 ? (
               <p class="text-[#7A6969] text-base py-8 text-center bg-[#FFFDFB] rounded-xl border border-[#E8DCD5]">
-                尚無夥伴加入，點擊「加入這場逃離」成為第一個夥伴吧！
+                尚無夥伴加入，點擊「報名這場活動」成為第一個夥伴吧！
               </p>
             ) : (
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1119,7 +1119,7 @@
           <div class="bg-[#FFFDFB] rounded-2xl max-w-lg w-full p-6 shadow-xl border border-[#E8DCD5] max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div class="flex items-center justify-between border-b border-[#E8DCD5] pb-3">
               <h3 class="text-lg sm:text-xl font-bold text-[#4A3B3B]">
-                {initialData ? '修改夥伴資料' : '加入這場逃離'}
+                {initialData ? '修改夥伴資料' : '報名這場活動'}
               </h3>
               <button onClick={onClose} class="text-[#7A6969] hover:text-[#4A3B3B] p-1 text-xl">✕</button>
             </div>
@@ -1133,7 +1133,6 @@
                 <label class="block font-bold text-[#4A3B3B] mb-1">暱稱 / 稱呼 *</label>
                 <input 
                   type="text" required
-                  placeholder="例: 阿傑"
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
                   class="w-full p-2.5 input-outdoor"
@@ -1189,7 +1188,6 @@
                 <label class="block font-bold text-[#4A3B3B] mb-1">備註 / 需求說明</label>
                 <textarea 
                   rows="2"
-                  placeholder="例: 攜帶寵物 / 需租借卡式爐"
                   value={formData.note}
                   onChange={e => setFormData({...formData, note: e.target.value})}
                   class="w-full p-2.5 input-outdoor"
@@ -1199,7 +1197,7 @@
               <div class="flex justify-end gap-3 pt-3 border-t border-[#E8DCD5]">
                 <button type="button" onClick={onClose} class="px-5 py-2.5 text-[#7A6969] font-bold">取消</button>
                 <button type="submit" class="px-7 py-2.5 bg-[#C88A75] hover:bg-[#B27763] text-[#FFFDFB] font-bold btn-rounded shadow-sm text-base">
-                  {initialData ? '儲存修改' : '確認加入逃離'}
+                  {initialData ? '儲存修改' : '報名這場活動'}
                 </button>
               </div>
             </form>
@@ -1246,7 +1244,7 @@
                 <label class="block font-bold text-[#4A3B3B] mb-1">逃離計畫名稱 *</label>
                 <input 
                   type="text" required
-                  placeholder="例: 南投山裡兩天一夜"
+                  placeholder="例: 露營區名稱"
                   value={formData.title}
                   onChange={e => setFormData({...formData, title: e.target.value})}
                   class="w-full p-2.5 input-outdoor"
@@ -1268,7 +1266,6 @@
                   <label class="block font-bold text-[#4A3B3B] mb-1">發起人暱稱 *</label>
                   <input 
                     type="text" required
-                    placeholder="例: 大熊"
                     value={formData.organizer}
                     onChange={e => setFormData({...formData, organizer: e.target.value})}
                     class="w-full p-2.5 input-outdoor"

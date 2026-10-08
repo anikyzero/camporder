@@ -122,6 +122,57 @@
 
       const [searchTerm, setSearchTerm] = useState('');
 
+      // 📢 逃離基地公告 State
+      const [noticeText, setNoticeText] = useState(() => {
+        return localStorage.getItem('camporder_notice') || '歡迎來到假日逃離計畫！今晚睡哪裡？先報名再說～暫別城市的喧囂，一起到戶外渡假吧！';
+      });
+      const [showNoticeModal, setShowNoticeModal] = useState(false);
+      const [passwordInput, setPasswordInput] = useState('');
+      const [passwordError, setPasswordError] = useState('');
+      const [noticeInput, setNoticeInput] = useState('');
+
+      const loadNoticeFromSupabase = async () => {
+        try {
+          const { data } = await supabase.from('announcements').select('*').limit(1);
+          if (data && data.length > 0 && data[0].content) {
+            setNoticeText(data[0].content);
+            localStorage.setItem('camporder_notice', data[0].content);
+          }
+        } catch (err) {
+          // 忽略
+        }
+      };
+
+      useEffect(() => {
+        loadNoticeFromSupabase();
+      }, []);
+
+      const handleOpenNoticeEdit = () => {
+        setPasswordInput('');
+        setPasswordError('');
+        setNoticeInput(noticeText);
+        setShowNoticeModal(true);
+      };
+
+      const handleSaveNotice = async () => {
+        if (passwordInput.trim() !== 'YBSG') {
+          setPasswordError('密碼錯誤！請輸入正確大寫密碼 YBSG');
+          return;
+        }
+        const newNotice = noticeInput.trim();
+        setNoticeText(newNotice);
+        localStorage.setItem('camporder_notice', newNotice);
+        setShowNoticeModal(false);
+
+        try {
+          await supabase.from('announcements').upsert([{ id: 1, content: newNotice }]);
+        } catch (err) {
+          // 忽略
+        }
+
+        alert('公告更新成功！');
+      };
+
       const loadEventsFromSupabase = async () => {
         setLoading(true);
         setSyncStatus('正在同步最新逃離計畫...');
@@ -191,6 +242,22 @@
           (e.registrations || []).some(r => (r.name || '').toLowerCase().includes(term))
         );
       }, [events, searchTerm]);
+
+      const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+
+      const activeCount = useMemo(() => {
+        return filteredEvents.filter(e => {
+          const checkDate = e.endDate || e.startDate;
+          return !checkDate || checkDate >= todayStr;
+        }).length;
+      }, [filteredEvents, todayStr]);
+
+      const expiredCount = useMemo(() => {
+        return filteredEvents.filter(e => {
+          const checkDate = e.endDate || e.startDate;
+          return checkDate && checkDate < todayStr;
+        }).length;
+      }, [filteredEvents, todayStr]);
 
       const handleRegisterSubmit = async (eventId, regData) => {
         const newReg = { 
@@ -361,7 +428,9 @@
           {/* 頂部導覽列 Header */}
           <header class="bg-[#3F5144] text-[#FFFDF8] shadow-md sticky top-0 z-30">
             <div class="max-w-6xl mx-auto px-4 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div class="flex items-center justify-between w-full sm:w-auto cursor-pointer" onClick={() => { setSelectedEvent(null); loadEventsFromSupabase(); }}>
+              <div 
+                class="flex items-center justify-between w-full sm:w-auto cursor-pointer" 
+                onClick={() => { setSelectedEvent(null); setCurrentView('list'); setSearchTerm(''); loadEventsFromSupabase(); }}>
                 <div>
                   <h1 class="text-xl sm:text-2xl font-bold tracking-wide text-[#FFFDF8]">
                     假日逃離計畫
@@ -425,6 +494,23 @@
               />
             ) : (
               <div>
+                {/* 📢 逃離基地公告區 */}
+                <div class="mb-6 bg-[#FFFDF8] p-4.5 sm:p-5 rounded-2xl border border-[#DDD8CB] shadow-xs">
+                  <div class="flex items-center justify-between border-b border-[#DDD8CB]/60 pb-2 mb-2">
+                    <h3 class="font-bold text-[#3F5144] text-base sm:text-lg flex items-center gap-2">
+                      <span>📢</span> 逃離基地公告
+                    </h3>
+                    <button 
+                      onClick={handleOpenNoticeEdit}
+                      class="text-xs sm:text-sm font-bold text-[#B8794A] hover:text-[#9F633D] px-3 py-1 rounded-lg bg-[#F0DED0]/60 hover:bg-[#F0DED0] transition border border-[#9A5E3D]/20">
+                      編輯公告
+                    </button>
+                  </div>
+                  <p class="text-[#30332F] text-base sm:text-lg leading-relaxed whitespace-pre-line font-medium">
+                    {noticeText}
+                  </p>
+                </div>
+
                 <div class="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-[#FFFDF8] p-4.5 rounded-2xl border border-[#DDD8CB] shadow-xs">
                   <div class="relative w-full sm:w-80">
                     <input 
@@ -437,7 +523,8 @@
                   </div>
 
                   <div class="text-sm sm:text-base text-[#5A5F56] font-medium self-end sm:self-center">
-                    目前共有 <span class="text-[#3F5144] font-bold text-lg sm:text-xl">{filteredEvents.length}</span> 場逃離計畫
+                    目前共有 <span class="text-[#30332F] font-bold text-lg sm:text-xl">{filteredEvents.length}</span> 場逃離計畫 
+                    （<span class="text-[#3F5144] font-bold">{activeCount}</span> 場進行中 / <span class="text-[#737970] font-bold">{expiredCount}</span> 場已結束）
                   </div>
                 </div>
 
@@ -495,6 +582,53 @@
               onClose={() => setEditingRegister(null)}
               onSubmit={(eventId, data) => handleUpdateRegistration(editingRegister.id, data)}
             />
+          )}
+
+          {/* 📢 編輯公告 Modal */}
+          {showNoticeModal && (
+            <div class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <div class="bg-[#FFFDF8] rounded-2xl p-6 max-w-lg w-full border border-[#DDD8CB] shadow-xl space-y-4">
+                <h3 class="text-xl font-bold text-[#3F5144]">編輯逃離基地公告</h3>
+                
+                <div>
+                  <label class="block text-sm font-bold text-[#5A5F56] mb-1">公告編輯密碼 (請輸入大寫 YBSG)</label>
+                  <input 
+                    type="password"
+                    placeholder="請輸入大寫密碼 YBSG"
+                    value={passwordInput}
+                    onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(''); }}
+                    class="w-full px-4 py-2.5 input-outdoor text-base"
+                  />
+                  {passwordError && (
+                    <p class="text-rose-600 font-bold text-xs mt-1">{passwordError}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label class="block text-sm font-bold text-[#5A5F56] mb-1">公告內容</label>
+                  <textarea 
+                    rows="4"
+                    placeholder="請輸入欲發布的公告內容..."
+                    value={noticeInput}
+                    onChange={(e) => setNoticeInput(e.target.value)}
+                    class="w-full px-4 py-2.5 input-outdoor text-base"
+                  />
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-2">
+                  <button 
+                    onClick={() => setShowNoticeModal(false)}
+                    class="px-4 py-2 bg-[#EEEADF] hover:bg-[#E4DCCB] text-[#30332F] font-bold rounded-lg text-sm">
+                    取消
+                  </button>
+                  <button 
+                    onClick={handleSaveNotice}
+                    class="px-5 py-2 bg-[#3F5144] hover:bg-[#2F3D33] text-[#FFFDF8] font-bold rounded-lg text-sm">
+                    儲存公告
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       );
@@ -840,16 +974,9 @@
                   return (
                     <div key={reg.id} class="bg-[#FFFDF8] rounded-xl p-4.5 border border-[#DDD8CB] shadow-xs flex flex-col justify-between space-y-3">
                       <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                          <div 
-                            class="w-11 h-11 rounded-full font-bold flex items-center justify-center text-base shadow-xs border border-white"
-                            style={{ backgroundColor: avatarColor.bg, color: avatarColor.text }}>
-                            {(reg.name || '逃')[0]}
-                          </div>
-                          <div>
-                            <div class="font-bold text-[#30332F] text-lg">{reg.name}</div>
-                            <div class="text-xs text-[#5A5F56]">已報名</div>
-                          </div>
+                        <div>
+                          <div class="font-bold text-[#30332F] text-lg sm:text-xl">{reg.name}</div>
+                          <div class="text-xs text-[#5A5F56]">已報名夥伴</div>
                         </div>
 
                         <span class="bg-[#E1E8DD] text-[#52664F] text-xs sm:text-sm font-bold px-3 py-1 rounded-full">

@@ -132,11 +132,24 @@
       const [noticeInput, setNoticeInput] = useState('');
 
       const loadNoticeFromSupabase = async () => {
+        // 1. 嘗試從專用 announcements 資料表讀取
         try {
-          const { data } = await supabase.from('announcements').select('*').limit(1);
-          if (data && data.length > 0 && data[0].content) {
-            setNoticeText(data[0].content);
-            localStorage.setItem('camporder_notice', data[0].content);
+          const { data } = await supabase.from('announcements').select('*').eq('id', 1).single();
+          if (data && data.content) {
+            setNoticeText(data.content);
+            localStorage.setItem('camporder_notice', data.content);
+            return;
+          }
+        } catch (err) {
+          // 忽略
+        }
+
+        // 2. 備用：從 events 表讀取 system-notice 紀錄
+        try {
+          const { data } = await supabase.from('events').select('description').eq('id', 'system-notice').single();
+          if (data && data.description) {
+            setNoticeText(data.description);
+            localStorage.setItem('camporder_notice', data.description);
           }
         } catch (err) {
           // 忽略
@@ -164,13 +177,38 @@
         localStorage.setItem('camporder_notice', newNotice);
         setShowNoticeModal(false);
 
+        let savedToCloud = false;
+
+        // 優先嘗試寫入專用 announcements 表
         try {
-          await supabase.from('announcements').upsert([{ id: 1, content: newNotice }]);
+          const { error } = await supabase.from('announcements').upsert([{ id: 1, content: newNotice }]);
+          if (!error) savedToCloud = true;
         } catch (err) {
-          // 忽略
+          console.log("Announcements table sync note:", err);
         }
 
-        alert('公告更新成功！');
+        // 備用方案：同步寫入 events 表中的 system-notice 系統紀錄（確保持續雲端跨裝置同步）
+        try {
+          const { error } = await supabase.from('events').upsert([{ 
+            id: 'system-notice', 
+            title: 'SYSTEM_NOTICE', 
+            location: 'NOTICE', 
+            startDate: '2000-01-01', 
+            endDate: '2000-01-01', 
+            organizer: 'SYSTEM', 
+            description: newNotice 
+          }]);
+          if (!error) savedToCloud = true;
+        } catch (err) {
+          console.error("Notice fallback sync error:", err);
+        }
+
+        if (savedToCloud) {
+          alert('公告已成功更新並同步至全站裝置！');
+          loadNoticeFromSupabase();
+        } else {
+          alert('公告已儲存於本機，但雲端同步失敗。請確認網路與資料庫連線。');
+        }
       };
 
       const loadEventsFromSupabase = async () => {
@@ -180,9 +218,16 @@
           const { data: eventsData, error: evErr } = await supabase
             .from('events')
             .select('*')
-            .order('startDate', { ascending: false }); // 依活動日期最慢/最晚優先排序
+            .order('startDate', { ascending: false });
 
           if (evErr) throw evErr;
+
+          // 讀取系統公告（如果有）
+          const sysNotice = (eventsData || []).find(evt => evt.id === 'system-notice');
+          if (sysNotice && sysNotice.description) {
+            setNoticeText(sysNotice.description);
+            localStorage.setItem('camporder_notice', sysNotice.description);
+          }
 
           const { data: regsData, error: regErr } = await supabase
             .from('registrations')
@@ -190,15 +235,17 @@
 
           if (regErr) throw regErr;
 
-          const eventsMap = (eventsData || []).map(evt => {
-            const regs = (regsData || []).filter(r => String(r.eventId) === String(evt.id));
-            return {
-              ...evt,
-              registrations: regs
-            };
-          });
+          const eventsMap = (eventsData || [])
+            .filter(evt => evt.id !== 'system-notice' && evt.title !== 'SYSTEM_NOTICE')
+            .map(evt => {
+              const regs = (regsData || []).filter(r => String(r.eventId) === String(evt.id));
+              return {
+                ...evt,
+                registrations: regs
+              };
+            });
 
-          // 前端再次確認依活動日期 (startDate) 降序排序 (日期最晚的在最上面)
+          // 前端再次確認依活動日期 (startDate) 降序排序
           eventsMap.sort((a, b) => (b.startDate || '').localeCompare(a.startDate || ''));
 
           setEvents(eventsMap);

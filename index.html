@@ -156,7 +156,7 @@
 
       const handleSaveNotice = async () => {
         if (passwordInput.trim() !== 'YBSG') {
-          setPasswordError('密碼錯誤！請輸入正確大寫密碼 YBSG');
+          setPasswordError('密碼錯誤！無法編輯公告');
           return;
         }
         const newNotice = noticeInput.trim();
@@ -591,10 +591,10 @@
                 <h3 class="text-xl font-bold text-[#3F5144]">編輯逃離基地公告</h3>
                 
                 <div>
-                  <label class="block text-sm font-bold text-[#5A5F56] mb-1">公告編輯密碼 (請輸入大寫 YBSG)</label>
+                  <label class="block text-sm font-bold text-[#5A5F56] mb-1">請輸入編輯密碼</label>
                   <input 
                     type="password"
-                    placeholder="請輸入大寫密碼 YBSG"
+                    placeholder="請輸入密碼..."
                     value={passwordInput}
                     onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(''); }}
                     class="w-full px-4 py-2.5 input-outdoor text-base"
